@@ -1,3 +1,5 @@
+doc/*
+prototype/
 # Virtual environment
 venv/
 .venv/
