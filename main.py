@@ -1,7 +1,32 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+from app.api.routes import auth
+from app.api.routes import company
+from app.core.config import settings
+from app.db.base import Base
+from app.db.session import engine
 
-@app.get("/") 
+import app.models.user     # noqa: F401
+import app.models.company  # noqa: F401
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Identity & Profile Management API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth.router,    prefix=f"{settings.API_V1_STR}/auth",    tags=["auth"])
+app.include_router(company.router, prefix=f"{settings.API_V1_STR}/company", tags=["company"])
+
+
+@app.get("/")
 def root():
-    return {"message": "Hello World"} 
+    return {"message": "Identity API is running"}
+
