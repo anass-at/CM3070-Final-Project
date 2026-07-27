@@ -1,0 +1,158 @@
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from jose import JWTError
+from typing import List
+
+from app.db.session import get_db
+from app.models.user import User
+from app.models.company import Company
+from app.models.access_log import AccessLog
+from app.core.security import decode_access_token, hash_password
+from app.core.scopes import ALL_SCOPES
+from app.schemas.admin import (
+    AdminUserResponse,
+    AdminCompanyResponse,
+    ApproveCompanyRequest,
+    RejectRequest,
+    AccessLogResponse,
+)
+
+router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    try:
+        payload = decode_access_token(token)
+        user = db.query(User).filter(User.id == int(payload["sub"])).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        if user.role != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        return user
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+
+
+# --- Users ---
+
+@router.get("/users", response_model=List[AdminUserResponse])
+def list_users(admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return db.query(User).filter(User.role != "admin").all()
+
+
+@router.get("/users/{user_id}", response_model=AdminUserResponse)
+def get_user(user_id: int, admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@router.post("/users/{user_id}/verify", response_model=AdminUserResponse)
+def verify_user(user_id: int, admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_verified = True
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.post("/users/{user_id}/reject", response_model=AdminUserResponse)
+def reject_user(user_id: int, body: RejectRequest, admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_verified = False
+    user.is_active = False
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+# --- Companies ---
+
+@router.get("/companies", response_model=List[AdminCompanyResponse])
+def list_companies(admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    return db.query(Company).all()
+
+
+@router.get("/companies/{company_id}", response_model=AdminCompanyResponse)
+def get_company(company_id: int, admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return company
+
+
+@router.post("/companies/{company_id}/approve", response_model=AdminCompanyResponse)
+def approve_company(
+    company_id: int,
+    body: ApproveCompanyRequest,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    invalid = [s for s in body.scopes if s not in ALL_SCOPES]
+    if invalid:
+        raise HTTPException(status_code=400, detail=f"Invalid scopes: {invalid}")
+
+    company.approved_scopes = ",".join(body.scopes)
+    company.is_approved = True
+    company.is_active = True
+    db.commit()
+    db.refresh(company)
+    return company
+
+
+@router.post("/companies/{company_id}/reject", response_model=AdminCompanyResponse)
+def reject_company(
+    company_id: int,
+    body: RejectRequest,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    company.is_approved = False
+    company.is_active = False
+    company.approved_scopes = ""
+    db.commit()
+    db.refresh(company)
+    return company
+
+
+# --- Access Logs ---
+
+@router.get("/access-logs", response_model=List[AccessLogResponse])
+def list_access_logs(
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    return db.query(AccessLog).order_by(AccessLog.created_at.desc()).all()
+
+
+@router.get("/access-logs/company/{company_id}", response_model=List[AccessLogResponse])
+def logs_by_company(
+    company_id: int,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    return db.query(AccessLog).filter(AccessLog.company_id == company_id).order_by(AccessLog.created_at.desc()).all()
+
+
+@router.get("/access-logs/user/{user_id}", response_model=List[AccessLogResponse])
+def logs_by_user(
+    user_id: int,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    return db.query(AccessLog).filter(AccessLog.user_id == user_id).order_by(AccessLog.created_at.desc()).all()

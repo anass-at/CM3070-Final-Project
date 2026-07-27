@@ -4,6 +4,7 @@ prototype/
 venv/
 .venv/
 env/
+NatID-API.postman_collection.json
 
 # Python
 __pycache__/
