@@ -1,9 +1,12 @@
 import os
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
+from typing import List
 from app.db.session import get_db
 from app.models.user import User
+from app.models.access_log import AccessLog
 from app.schemas.auth import RegisterRequest, UpdateProfileRequest, LoginRequest, TokenResponse, UserResponse
+from app.schemas.admin import AccessLogResponse
 from app.core.security import hash_password, verify_password, create_access_token, decode_access_token
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
@@ -95,3 +98,13 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.get("/access-logs", response_model=List[AccessLogResponse])
+def my_access_logs(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return (
+        db.query(AccessLog)
+        .filter(AccessLog.user_id == current_user.id)
+        .order_by(AccessLog.created_at.desc())
+        .all()
+    )

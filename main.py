@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import auth
 from app.api.routes import company
 from app.api.routes import admin
+from app.api.routes import identity
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine
@@ -24,9 +25,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router,    prefix=f"{settings.API_V1_STR}/auth",    tags=["auth"])
-app.include_router(company.router, prefix=f"{settings.API_V1_STR}/company", tags=["company"])
-app.include_router(admin.router,   prefix=f"{settings.API_V1_STR}/admin",   tags=["admin"])
+app.include_router(auth.router,     prefix=f"{settings.API_V1_STR}/auth",     tags=["auth"])
+app.include_router(company.router,  prefix=f"{settings.API_V1_STR}/company",  tags=["company"])
+app.include_router(admin.router,    prefix=f"{settings.API_V1_STR}/admin",    tags=["admin"])
+app.include_router(identity.router, prefix=f"{settings.API_V1_STR}/identity", tags=["identity"])
 
 
 @app.get("/")
