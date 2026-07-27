@@ -3,12 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth
 from app.api.routes import company
+from app.api.routes import admin
 from app.core.config import settings
 from app.db.base import Base
 from app.db.session import engine
 
-import app.models.user     # noqa: F401
-import app.models.company  # noqa: F401
+import app.models.user       # noqa: F401
+import app.models.company    # noqa: F401
+import app.models.access_log # noqa: F401
 
 Base.metadata.create_all(bind=engine)
 
@@ -24,6 +26,7 @@ app.add_middleware(
 
 app.include_router(auth.router,    prefix=f"{settings.API_V1_STR}/auth",    tags=["auth"])
 app.include_router(company.router, prefix=f"{settings.API_V1_STR}/company", tags=["company"])
+app.include_router(admin.router,   prefix=f"{settings.API_V1_STR}/admin",   tags=["admin"])
 
 
 @app.get("/")
