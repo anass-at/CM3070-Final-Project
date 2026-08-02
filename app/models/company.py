@@ -31,6 +31,10 @@ class Company(Base):
     # scopes the admin approved - comma separated e.g. "name:full,profile:basic"
     approved_scopes = Column(String(500), default="")
 
+    # set when admin approves — used to get OAuth2 tokens from Hydra
+    hydra_client_id = Column(String(100), nullable=True)
+    hydra_client_secret = Column(String(100), nullable=True)
+
     is_approved = Column(Boolean, default=False)  # admin must approve first
     is_active = Column(Boolean, default=True)
 
