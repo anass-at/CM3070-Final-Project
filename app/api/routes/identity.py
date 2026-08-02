@@ -1,18 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from jose import JWTError
 from datetime import date
 
 from app.db.session import get_db
 from app.models.user import User
 from app.models.company import Company
 from app.models.access_log import AccessLog
-from app.core.security import decode_access_token
+from app.core.hydra import introspect_token
 from app.core.scopes import SCOPE_FIELDS
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/company/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:4444/oauth2/token")
 
 
 @router.get("/{user_id}")
@@ -21,22 +20,31 @@ def get_identity(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-    # Validate company token
+    # Validate token with Hydra
     try:
-        payload = decode_access_token(token)
-        if payload.get("type") != "company":
-            raise HTTPException(status_code=401, detail="Not a company token")
-        company_id = int(str(payload["sub"]).replace("company_", ""))
-        scopes = payload.get("scopes", [])
-    except (JWTError, ValueError) as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+        token_data = introspect_token(token)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Token validation failed: {e}")
 
-    # Check company is still approved
+    if not token_data.get("active"):
+        raise HTTPException(status_code=401, detail="Token is inactive or expired")
+
+    # Extract client identity and scopes from Hydra response
+    client_id = token_data.get("client_id", "")
+    scope_string = token_data.get("scope", "")
+    scopes = [s for s in scope_string.split(" ") if s]
+
+    # Resolve company from Hydra client_id
+    try:
+        company_id = int(client_id.replace("company_", ""))
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid client identity")
+
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company or not company.is_approved:
         raise HTTPException(status_code=403, detail="Company not approved")
 
-    # Check user exists and is verified
+    # Resolve user and check they are verified
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -48,19 +56,19 @@ def get_identity(
     for scope in scopes:
         allowed_fields.extend(SCOPE_FIELDS.get(scope, []))
 
-    # Return only allowed fields
+    # Return only the fields the company is allowed to see
     result = {"user_id": user.id}
     for field in allowed_fields:
         value = getattr(user, field, None)
         if value is not None:
             result[field] = str(value) if isinstance(value, date) else value
 
-    # Write access log
+    # Log the access
     db.add(AccessLog(
         company_id=company.id,
         company_name=company.name,
         user_id=user.id,
-        scope_used=",".join(scopes),
+        scope_used=" ".join(scopes),
         endpoint=f"/api/v1/identity/{user_id}",
         status_code=200,
     ))

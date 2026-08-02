@@ -29,11 +29,17 @@ class AdminCompanyResponse(BaseModel):
     requested_scopes: Optional[str] = None
     scope_justification: Optional[str] = None
     approved_scopes: Optional[str] = None
+    hydra_client_id: Optional[str] = None
     is_approved: bool
     is_active: bool
     created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
+
+
+class ApproveCompanyResponse(AdminCompanyResponse):
+    """Returned only on approval — includes the client secret (shown once)."""
+    hydra_client_secret: Optional[str] = None
 
 
 class ApproveCompanyRequest(BaseModel):
