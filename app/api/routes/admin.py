@@ -13,10 +13,12 @@ from app.core.scopes import ALL_SCOPES
 from app.schemas.admin import (
     AdminUserResponse,
     AdminCompanyResponse,
+    ApproveCompanyResponse,
     ApproveCompanyRequest,
     RejectRequest,
     AccessLogResponse,
 )
+from app.core.hydra import create_hydra_client, update_hydra_client, delete_hydra_client
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -88,7 +90,7 @@ def get_company(company_id: int, admin: User = Depends(get_current_admin), db: S
     return company
 
 
-@router.post("/companies/{company_id}/approve", response_model=AdminCompanyResponse)
+@router.post("/companies/{company_id}/approve", response_model=ApproveCompanyResponse)
 def approve_company(
     company_id: int,
     body: ApproveCompanyRequest,
@@ -103,12 +105,28 @@ def approve_company(
     if invalid:
         raise HTTPException(status_code=400, detail=f"Invalid scopes: {invalid}")
 
+    # Create or update Hydra OAuth2 client
+    try:
+        if company.hydra_client_id:
+            update_hydra_client(company.hydra_client_id, body.scopes)
+            client_secret = company.hydra_client_secret
+        else:
+            client_id, client_secret = create_hydra_client(company.id, body.scopes)
+            company.hydra_client_id = client_id
+            company.hydra_client_secret = client_secret
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Hydra error: {e}")
+
     company.approved_scopes = ",".join(body.scopes)
     company.is_approved = True
     company.is_active = True
     db.commit()
     db.refresh(company)
-    return company
+
+    # Build response and expose the secret once so admin can pass it to the company
+    response = ApproveCompanyResponse.model_validate(company)
+    response.hydra_client_secret = client_secret
+    return response
 
 
 @router.post("/companies/{company_id}/reject", response_model=AdminCompanyResponse)
@@ -121,6 +139,15 @@ def reject_company(
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+
+    # Remove Hydra client if it exists
+    if company.hydra_client_id:
+        try:
+            delete_hydra_client(company.hydra_client_id)
+        except Exception:
+            pass
+        company.hydra_client_id = None
+        company.hydra_client_secret = None
 
     company.is_approved = False
     company.is_active = False
