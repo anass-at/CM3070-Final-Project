@@ -133,3 +133,8 @@ def login_company(body: CompanyLoginRequest, db: Session = Depends(get_db)):
 @router.get("/profile", response_model=CompanyResponse)
 def get_company_profile(company: Company = Depends(get_current_company)):
     return company
+
+
+@router.post("/logout")
+def logout_company(company: Company = Depends(get_current_company)):
+    return {"message": "Logged out successfully"}

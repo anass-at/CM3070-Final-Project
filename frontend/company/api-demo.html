@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>API Demo - NatID</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Company Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="api-demo.html" class="nav-link d-inline">API Demo</a>
+      <a href="#" onclick="logoutCompany()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4>API Demo</h4>
+  <p class="text-muted">This shows how a company would call the identity API to get user data.</p>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6>Step 1 — Get a token from Hydra</h6>
+      <p class="text-muted small">The company sends their client ID and secret to Hydra and gets back an access token.</p>
+      <pre style="background:#f8f9fa; padding:12px; border-radius:6px; font-size:0.85rem;">POST http://localhost:4444/oauth2/token
+
+grant_type=client_credentials
+client_id=national-bank-x7k2
+client_secret=cs_a1b2c3d4e5f6
+scope=name:legal</pre>
+      <button class="btn btn-sm btn-outline-success" onclick="document.getElementById('token-box').style.display='block'">Simulate — Get Token</button>
+      <pre id="token-box" style="display:none; background:#e8f5e9; padding:12px; border-radius:6px; font-size:0.85rem; margin-top:10px;">{
+  "access_token": "eyJhbGciOiJSUzI1NiJ9.eyJzY29wZSI6Im5hbWU6bGVnYWwifQ.sig",
+  "token_type": "bearer",
+  "scope": "name:legal"
+}</pre>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6>Step 2 — Call the Identity API</h6>
+      <p class="text-muted small">The company uses the token to request a specific user's data.</p>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label small">User ID</label>
+          <input type="text" class="form-control form-control-sm" id="user-id" value="1042">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Scope to request</label>
+          <select class="form-select form-select-sm" id="scope">
+            <option value="name:legal">name:legal</option>
+            <option value="name:preferred">name:preferred</option>
+            <option value="name:professional">name:professional</option>
+            <option value="name:religious">name:religious</option>
+            <option value="profile:basic">profile:basic</option>
+          </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <button class="btn btn-sm btn-primary" onclick="runApiCall()">Send Request</button>
+        </div>
+      </div>
+
+      <div id="result-box" style="display:none">
+        <p class="text-muted small mb-1">Response from API:</p>
+        <pre id="api-result" style="background:#f8f9fa; padding:12px; border-radius:6px; font-size:0.85rem;"></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h6>What happens behind the scenes</h6>
+      <ol class="text-muted small">
+        <li>Company sends their credentials to Hydra and gets a token</li>
+        <li>Company calls the platform API with the token and a user ID</li>
+        <li>The API checks with Hydra that the token is valid</li>
+        <li>The API checks what scopes the company is allowed</li>
+        <li>The API returns only the data the company is allowed to see</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script src="../js/api.js"></script>
+</body>
+</html>
