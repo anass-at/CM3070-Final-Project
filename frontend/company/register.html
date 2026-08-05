@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Company Register - NatID</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Company Portal</span>
+    <a href="../index.html" class="nav-link">Home</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card p-4">
+        <h4 class="mb-3">Register Your Organisation</h4>
+
+        <div id="msg" style="display:none"></div>
+
+        <form id="registerForm">
+          <h6 class="text-muted">Organisation Details</h6>
+          <div class="mb-2">
+            <label class="form-label">Organisation Name</label>
+            <input type="text" id="name" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Email</label>
+            <input type="email" id="email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" id="password" class="form-control" required>
+          </div>
+
+          <div class="alert alert-info small mb-3">
+            After registration your account will be reviewed by an admin. Once approved you can log in, fill in company details, and request the data scopes you need.
+          </div>
+
+          <button type="submit" id="submitBtn" data-label="Submit for Review" class="btn btn-success w-100">Submit for Review</button>
+        </form>
+
+        <p class="mt-3 text-center">Already registered? <a href="login.html">Login</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  document.getElementById('registerForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    setLoading(btn, true);
+    hideAlert('msg');
+
+    try {
+      await post(`${API}/company/register`, {
+        name:     document.getElementById('name').value,
+        email:    document.getElementById('email').value,
+        password: document.getElementById('password').value
+      });
+
+      showSuccess('msg', 'Registration submitted successfully. An admin will review your account and you will be able to log in once approved.');
+      document.getElementById('registerForm').reset();
+    } catch (err) {
+      showError('msg', err.message);
+    } finally {
+      setLoading(btn, false);
+    }
+  });
+</script>
+</body>
+</html>

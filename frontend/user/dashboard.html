@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - NatID</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - User Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="profile.html" class="nav-link d-inline">My Profile</a>
+      <a href="documents.html" class="nav-link d-inline">Documents</a>
+      <a href="access-log.html" class="nav-link d-inline">Access Log</a>
+      <a href="#" onclick="logoutUser()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4>Welcome, Abdullah</h4>
+
+  <!-- Status -->
+  <div class="alert alert-warning mt-3">
+    <strong>Status: Pending Verification</strong> — Your documents have been submitted and are waiting for admin review.
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5>Profile Completion</h5>
+          <ul>
+            <li>&#10003; Email and account created</li>
+            <li>&#10003; Legal name added</li>
+            <li>&#10003; Documents uploaded (2)</li>
+            <li>&#10007; Professional name — <a href="profile.html">add it</a></li>
+            <li>&#10007; Profile photo — <a href="profile.html">add it</a></li>
+          </ul>
+          <a href="profile.html" class="btn btn-sm btn-outline-primary">Edit Profile</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5>Recent Access to My Data</h5>
+          <table class="table table-sm">
+            <thead><tr><th>Company</th><th>Scope</th><th>Date</th></tr></thead>
+            <tbody>
+              <tr><td>National Bank</td><td><span class="scope-tag">name:legal</span></td><td>19 Jun 2026</td></tr>
+              <tr><td>City Hospital</td><td><span class="scope-tag">profile:basic</span></td><td>17 Jun 2026</td></tr>
+            </tbody>
+          </table>
+          <a href="access-log.html" class="btn btn-sm btn-outline-secondary">See full log</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+</body>
+</html>

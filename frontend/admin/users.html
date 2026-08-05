@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Users - NatID Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Admin Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="users.html" class="nav-link d-inline">Users</a>
+      <a href="companies.html" class="nav-link d-inline">Companies</a>
+      <a href="access-logs.html" class="nav-link d-inline">Access Logs</a>
+      <a href="#" onclick="logoutAdmin()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4>All Users</h4>
+
+  <div class="card">
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Registered</th><th>Docs</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fatima Al-Zahra</td>
+            <td>fatima@example.com</td>
+            <td>18 Jun</td>
+            <td>2</td>
+            <td><span class="status-pending">Pending</span></td>
+            <td><a href="user-review.html" class="btn btn-sm btn-primary">Review</a></td>
+          </tr>
+          <tr>
+            <td>Omar Khalid</td>
+            <td>omar@example.com</td>
+            <td>17 Jun</td>
+            <td>1</td>
+            <td><span class="status-pending">Pending</span></td>
+            <td><a href="user-review.html" class="btn btn-sm btn-primary">Review</a></td>
+          </tr>
+          <tr>
+            <td>Abdullah Al-Harbi</td>
+            <td>abdullah@example.com</td>
+            <td>10 Jun</td>
+            <td>2</td>
+            <td><span class="status-approved">Verified</span></td>
+            <td><a href="user-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
+          </tr>
+          <tr>
+            <td>Nora Al-Rashid</td>
+            <td>nora@example.com</td>
+            <td>5 Jun</td>
+            <td>3</td>
+            <td><span class="status-approved">Verified</span></td>
+            <td><a href="user-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
+          </tr>
+          <tr>
+            <td>Khalid Hassan</td>
+            <td>khalid@example.com</td>
+            <td>1 Jun</td>
+            <td>1</td>
+            <td><span class="status-rejected">Rejected</span></td>
+            <td><a href="user-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Review Company - NatID Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Admin Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="users.html" class="nav-link d-inline">Users</a>
+      <a href="companies.html" class="nav-link d-inline">Companies</a>
+      <a href="access-logs.html" class="nav-link d-inline">Access Logs</a>
+      <a href="#" onclick="logoutAdmin()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <a href="companies.html" class="btn btn-sm btn-outline-secondary mb-3">← Back to Companies</a>
+  <h4>Review Company — City Hospital</h4>
+
+  <div class="row">
+    <div class="col-md-7">
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6>Company Details</h6>
+          <table class="table table-sm">
+            <tbody>
+              <tr><td class="text-muted">Name</td><td>City Hospital</td></tr>
+              <tr><td class="text-muted">Sector</td><td>Hospital</td></tr>
+              <tr><td class="text-muted">Registration No.</td><td>CR-9988776655</td></tr>
+              <tr><td class="text-muted">Email</td><td>admin@cityhospital.sa</td></tr>
+              <tr><td class="text-muted">Website</td><td>https://cityhospital.sa</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <h6>Scope Requests — Approve or Reject Each One</h6>
+
+          <div class="border rounded p-3 mb-3">
+            <p><span class="scope-tag">name:legal</span></p>
+            <p class="text-muted small"><strong>Justification:</strong> Required for patient admission — we need to verify legal identity against our medical records system as per Ministry of Health regulation MOH-2023-14.</p>
+            <button class="btn btn-sm btn-success me-2" onclick="this.textContent='✓ Approved'; this.disabled=true;">Approve</button>
+            <button class="btn btn-sm btn-danger" onclick="this.textContent='✗ Rejected'; this.disabled=true;">Reject</button>
+          </div>
+
+          <div class="border rounded p-3">
+            <p><span class="scope-tag">profile:basic</span></p>
+            <p class="text-muted small"><strong>Justification:</strong> Used to display patient name and photo on hospital wristbands and staff dashboards.</p>
+            <button class="btn btn-sm btn-success me-2" onclick="this.textContent='✓ Approved'; this.disabled=true;">Approve</button>
+            <button class="btn btn-sm btn-danger" onclick="this.textContent='✗ Rejected'; this.disabled=true;">Reject</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-5">
+      <div class="card">
+        <div class="card-body">
+          <h6>Decision</h6>
+          <div class="mb-3">
+            <label class="form-label">Notes (optional)</label>
+            <textarea class="form-control" rows="3" placeholder="Add a note..."></textarea>
+          </div>
+          <div class="d-grid gap-2">
+            <button class="btn btn-success" onclick="alert('Company approved! OAuth2 client created in Hydra.'); location.href='companies.html'">
+              ✓ Approve Company
+            </button>
+            <button class="btn btn-danger" onclick="alert('Company rejected'); location.href='companies.html'">
+              ✗ Reject
+            </button>
+          </div>
+          <p class="text-muted small mt-3">Approving this company will create an OAuth2 client in Hydra with the approved scopes. The company will receive a client ID and secret to start using the API.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+</body>
+</html>
