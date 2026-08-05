@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Documents - NatID</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - User Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="profile.html" class="nav-link d-inline">My Profile</a>
+      <a href="documents.html" class="nav-link d-inline">Documents</a>
+      <a href="access-log.html" class="nav-link d-inline">Access Log</a>
+      <a href="#" onclick="logoutUser()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4>My Documents</h4>
+  <p class="text-muted">Upload official documents for identity verification. These are only seen by the admin and are never shared with companies.</p>
+
+  <div class="card">
+    <div class="card-body">
+      <h6>Uploaded Documents</h6>
+      <table class="table">
+        <thead><tr><th>Document</th><th>Uploaded</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>National ID Card</td>
+            <td>11 Jun 2026</td>
+            <td><span class="status-approved">Accepted</span></td>
+          </tr>
+          <tr>
+            <td>Passport</td>
+            <td>11 Jun 2026</td>
+            <td><span class="status-pending">Pending review</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h6>Upload New Document</h6>
+      <form onsubmit="event.preventDefault(); alert('Document uploaded! Waiting for admin review.')">
+        <div class="mb-2">
+          <label class="form-label">Document Type</label>
+          <select class="form-select">
+            <option>National ID</option>
+            <option>Passport</option>
+            <option>Driver's License</option>
+            <option>Birth Certificate</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">File</label>
+          <input type="file" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+</body>
+</html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NatID - User Research Survey</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    .survey-header { background: #0d6efd; color: white; padding: 2rem 0; margin-bottom: 2rem; }
+    .section-card { border-left: 4px solid #0d6efd; }
+    .section-badge { background: #0d6efd; color: white; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 999px; }
+    .rating-group .btn-check + .btn { min-width: 48px; }
+    .rating-label { font-size: 0.78rem; color: #6c757d; }
+    .progress-bar-custom { height: 4px; background: #0d6efd; border-radius: 2px; transition: width 0.4s; }
+    .progress-track { height: 4px; background: #dee2e6; border-radius: 2px; margin-bottom: 1.5rem; }
+    #thankyou { display: none; }
+    .required-star { color: #dc3545; }
+  </style>
+</head>
+<body>
+
+<div class="survey-header">
+  <div class="container">
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <span class="fw-bold fs-5">NatID Platform</span>
+      <span class="badge bg-light text-primary">User Research</span>
+    </div>
+    <h1 class="h3 mb-1">How Do You Manage Your Identity?</h1>
+    <p class="mb-0 opacity-75">This survey is part of a university research project exploring how people present different names and identities across different contexts. It takes <strong>3–5 minutes</strong> to complete. All responses are anonymous.</p>
+  </div>
+</div>
+
+<div class="container" style="max-width: 720px;">
+
+  <!-- Progress indicator -->
+  <div class="d-flex justify-content-between align-items-center mb-1">
+    <small class="text-muted" id="progress-label">Section 1 of 4</small>
+    <small class="text-muted" id="progress-pct">0%</small>
+  </div>
+  <div class="progress-track mb-4">
+    <div class="progress-bar-custom" id="progress-bar" style="width: 0%"></div>
+  </div>
+
+  <form id="survey-form" novalidate>
+
+    <!-- ── Section 1: About You ───────────────────────────────────── -->
+    <div class="card mb-4 section-card shadow-sm" id="section-1">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="section-badge">Section 1</span>
+          <h5 class="mb-0">About You</h5>
+        </div>
+
+        <!-- Q1 -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">1. How many distinct names or identities do you actively use across different contexts? <span class="required-star">*</span></label>
+          <div class="d-flex flex-wrap gap-2" id="q1">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="q1" id="q1a" value="1" required>
+              <label class="form-check-label" for="q1a">Just 1</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="q1" id="q1b" value="2-3">
+              <label class="form-check-label" for="q1b">2 – 3</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="q1" id="q1c" value="4-5">
+              <label class="form-check-label" for="q1c">4 – 5</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="q1" id="q1d" value="5+">
+              <label class="form-check-label" for="q1d">More than 5</label>
+            </div>
+          </div>
+          <div class="invalid-feedback d-block text-danger" id="q1-error" style="display:none!important"></div>
+        </div>
+
+        <!-- Q2 -->
+        <div class="mb-2">
+          <label class="form-label fw-semibold">2. Which of the following name types do you have or use? <small class="text-muted">(Select all that apply)</small> <span class="required-star">*</span></label>
+          <div class="row g-2" id="q2">
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q2-cb" type="checkbox" name="q2" value="legal" id="q2a"><label class="form-check-label" for="q2a">Legal / official name</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q2-cb" type="checkbox" name="q2" value="preferred" id="q2b"><label class="form-check-label" for="q2b">Preferred / daily name</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q2-cb" type="checkbox" name="q2" value="professional" id="q2c"><label class="form-check-label" for="q2c">Professional / work name</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q2-cb" type="checkbox" name="q2" value="religious" id="q2d"><label class="form-check-label" for="q2d">Religious / ceremonial name</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q2-cb" type="checkbox" name="q2" value="username" id="q2e"><label class="form-check-label" for="q2e">Online username / handle</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q2-cb" type="checkbox" name="q2" value="nickname" id="q2f"><label class="form-check-label" for="q2f">Nickname used by family/friends</label></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 2: Name Usage Patterns ───────────────────────── -->
+    <div class="card mb-4 section-card shadow-sm" id="section-2">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="section-badge">Section 2</span>
+          <h5 class="mb-0">Name Usage Patterns</h5>
+        </div>
+
+        <!-- Q3 -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">3. Have you ever experienced a situation where a system or Organization used the wrong name for you? <span class="required-star">*</span></label>
+          <div class="d-flex flex-wrap gap-2">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="q3" id="q3a" value="yes_often" required>
+              <label class="form-check-label" for="q3a">Yes, frequently</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="q3" id="q3b" value="yes_sometimes">
+              <label class="form-check-label" for="q3b">Yes, occasionally</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="q3" id="q3c" value="no">
+              <label class="form-check-label" for="q3c">No, never</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="q3" id="q3d" value="unsure">
+              <label class="form-check-label" for="q3d">Not sure</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q4 — context-appropriate display -->
+        <div class="mb-4" id="q4-block">
+          <label class="form-label fw-semibold">4. When a system uses the wrong name for you, how does it make you feel?</label>
+          <p class="text-muted small mb-2">Rate from 1 (not bothered at all) to 5 (very uncomfortable or frustrated)</p>
+          <div class="d-flex align-items-center gap-2">
+            <span class="rating-label">Not bothered</span>
+            <div class="btn-group rating-group" role="group">
+              <input type="radio" class="btn-check" name="q4" id="q4r1" value="1" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q4r1">1</label>
+              <input type="radio" class="btn-check" name="q4" id="q4r2" value="2" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q4r2">2</label>
+              <input type="radio" class="btn-check" name="q4" id="q4r3" value="3" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q4r3">3</label>
+              <input type="radio" class="btn-check" name="q4" id="q4r4" value="4" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q4r4">4</label>
+              <input type="radio" class="btn-check" name="q4" id="q4r5" value="5" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q4r5">5</label>
+            </div>
+            <span class="rating-label">Very uncomfortable</span>
+          </div>
+        </div>
+
+        <!-- Q5 -->
+        <div class="mb-2">
+          <label class="form-label fw-semibold">5. Which contexts require you to use a specific name? <small class="text-muted">(Select all that apply)</small></label>
+          <div class="row g-2">
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q5" value="bank" id="q5a"><label class="form-check-label" for="q5a">Banking / financial services</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q5" value="hospital" id="q5b"><label class="form-check-label" for="q5b">Healthcare / hospitals</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q5" value="employer" id="q5c"><label class="form-check-label" for="q5c">Employer / HR systems</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q5" value="government" id="q5d"><label class="form-check-label" for="q5d">Government / official documents</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q5" value="social_media" id="q5e"><label class="form-check-label" for="q5e">Social media / online platforms</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q5" value="education" id="q5f"><label class="form-check-label" for="q5f">Education / university</label></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 3: Privacy & Data Sharing ────────────────────── -->
+    <div class="card mb-4 section-card shadow-sm" id="section-3">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="section-badge">Section 3</span>
+          <h5 class="mb-0">Privacy &amp; Data Sharing</h5>
+        </div>
+
+        <!-- Q6 -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">6. How comfortable are you sharing your <em>legal full name</em> with each of the following? <span class="required-star">*</span></label>
+          <p class="text-muted small mb-3">Rate from 1 (very uncomfortable) to 5 (completely comfortable)</p>
+          <div class="table-responsive">
+            <table class="table table-borderless align-middle">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th class="text-center small">1</th>
+                  <th class="text-center small">2</th>
+                  <th class="text-center small">3</th>
+                  <th class="text-center small">4</th>
+                  <th class="text-center small">5</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Bank or financial institution</td>
+                  <td class="text-center"><input type="radio" name="q6_bank" value="1" class="form-check-input" required></td>
+                  <td class="text-center"><input type="radio" name="q6_bank" value="2" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_bank" value="3" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_bank" value="4" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_bank" value="5" class="form-check-input"></td>
+                </tr>
+                <tr>
+                  <td>Hospital or healthcare provider</td>
+                  <td class="text-center"><input type="radio" name="q6_hospital" value="1" class="form-check-input" required></td>
+                  <td class="text-center"><input type="radio" name="q6_hospital" value="2" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_hospital" value="3" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_hospital" value="4" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_hospital" value="5" class="form-check-input"></td>
+                </tr>
+                <tr>
+                  <td>Employer / HR system</td>
+                  <td class="text-center"><input type="radio" name="q6_employer" value="1" class="form-check-input" required></td>
+                  <td class="text-center"><input type="radio" name="q6_employer" value="2" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_employer" value="3" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_employer" value="4" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_hospital" value="5" class="form-check-input"></td>
+                </tr>
+                <tr>
+                  <td>Third-party online service / app</td>
+                  <td class="text-center"><input type="radio" name="q6_online" value="1" class="form-check-input" required></td>
+                  <td class="text-center"><input type="radio" name="q6_online" value="2" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_online" value="3" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_online" value="4" class="form-check-input"></td>
+                  <td class="text-center"><input type="radio" name="q6_online" value="5" class="form-check-input"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Q7 -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">7. Who should decide which name a third-party service receives about you? <span class="required-star">*</span></label>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="q7" id="q7a" value="me" required>
+              <label class="form-check-label" for="q7a">Me — I should personally grant or revoke access for each service</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="q7" id="q7b" value="platform">
+              <label class="form-check-label" for="q7b">A trusted platform (like a government system) — they manage it on my behalf</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="q7" id="q7c" value="both">
+              <label class="form-check-label" for="q7c">Both — a platform sets the defaults, but I can override them</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="q7" id="q7d" value="service">
+              <label class="form-check-label" for="q7d">The third-party service — they should request what they need</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q8 -->
+        <div class="mb-2">
+          <label class="form-label fw-semibold">8. Which types of identity data do you consider <em>most sensitive</em>? <small class="text-muted">(Select all that apply)</small></label>
+          <div class="row g-2">
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q8" value="legal_name" id="q8a"><label class="form-check-label" for="q8a">Full legal name</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q8" value="religious_name" id="q8b"><label class="form-check-label" for="q8b">Religious name</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q8" value="photo" id="q8c"><label class="form-check-label" for="q8c">Profile photo</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q8" value="docs" id="q8d"><label class="form-check-label" for="q8d">Official documents (passport, ID)</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q8" value="username" id="q8e"><label class="form-check-label" for="q8e">Online usernames / handles</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input" type="checkbox" name="q8" value="preferred" id="q8f"><label class="form-check-label" for="q8f">Preferred / daily name</label></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 4: System Design Feedback ────────────────────── -->
+    <div class="card mb-4 section-card shadow-sm" id="section-4">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="section-badge">Section 4</span>
+          <h5 class="mb-0">System Design</h5>
+        </div>
+
+        <!-- Q9 -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">9. How much would you trust a <em>centralised government-backed platform</em> to manage and share your identity data with approved third parties? <span class="required-star">*</span></label>
+          <p class="text-muted small mb-2">Rate from 1 (no trust at all) to 5 (full trust)</p>
+          <div class="d-flex align-items-center gap-2">
+            <span class="rating-label">No trust</span>
+            <div class="btn-group rating-group" role="group">
+              <input type="radio" class="btn-check" name="q9" id="q9r1" value="1" autocomplete="off" required>
+              <label class="btn btn-outline-primary btn-sm" for="q9r1">1</label>
+              <input type="radio" class="btn-check" name="q9" id="q9r2" value="2" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q9r2">2</label>
+              <input type="radio" class="btn-check" name="q9" id="q9r3" value="3" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q9r3">3</label>
+              <input type="radio" class="btn-check" name="q9" id="q9r4" value="4" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q9r4">4</label>
+              <input type="radio" class="btn-check" name="q9" id="q9r5" value="5" autocomplete="off">
+              <label class="btn btn-outline-primary btn-sm" for="q9r5">5</label>
+            </div>
+            <span class="rating-label">Full trust</span>
+          </div>
+        </div>
+
+        <!-- Q10 -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">10. What features matter most to you in an identity management system? <small class="text-muted">(Select up to 3)</small> <span class="required-star">*</span></label>
+          <div class="row g-2" id="q10">
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q10-cb" type="checkbox" name="q10" value="security" id="q10a"><label class="form-check-label" for="q10a">Strong security (encrypted data)</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q10-cb" type="checkbox" name="q10" value="privacy" id="q10b"><label class="form-check-label" for="q10b">Privacy (minimal data sharing)</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q10-cb" type="checkbox" name="q10" value="control" id="q10c"><label class="form-check-label" for="q10c">User control over who sees what</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q10-cb" type="checkbox" name="q10" value="accuracy" id="q10d"><label class="form-check-label" for="q10d">Accuracy (verified data only)</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q10-cb" type="checkbox" name="q10" value="auditlog" id="q10e"><label class="form-check-label" for="q10e">Audit log (see who accessed data)</label></div></div>
+            <div class="col-sm-6"><div class="form-check"><input class="form-check-input q10-cb" type="checkbox" name="q10" value="ease" id="q10f"><label class="form-check-label" for="q10f">Ease of use</label></div></div>
+          </div>
+          <div class="text-danger small mt-1" id="q10-limit-msg" style="display:none">Please select no more than 3 options.</div>
+        </div>
+
+        <!-- Q11 -->
+        <div class="mb-4">
+          <label class="form-label fw-semibold">11. If a third party accessed your identity data without a valid reason, what action would you expect? <span class="required-star">*</span></label>
+          <div class="d-flex flex-column gap-2">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="q11" id="q11a" value="notify" required>
+              <label class="form-check-label" for="q11a">I should be notified immediately</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="q11" id="q11b" value="block_revoke">
+              <label class="form-check-label" for="q11b">Their access should be blocked and revoked</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="q11" id="q11c" value="both_notify_block">
+              <label class="form-check-label" for="q11c">Both — notify me and block them</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="q11" id="q11d" value="admin_handle">
+              <label class="form-check-label" for="q11d">The platform admin should handle it automatically</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q12 — open text -->
+        <div class="mb-2">
+          <label class="form-label fw-semibold">12. Is there anything else about managing your online identities or names that you'd like to share?</label>
+          <textarea class="form-control" name="q12" id="q12" rows="3" maxlength="500" placeholder="Optional — your thoughts help shape the system..."></textarea>
+          <div class="form-text text-end"><span id="q12-count">0</span>/500</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="d-flex justify-content-end mb-5">
+      <button type="submit" class="btn btn-primary btn-lg px-5">Submit Survey</button>
+    </div>
+
+  </form>
+
+  <!-- Thank-you screen -->
+  <div id="thankyou" class="text-center py-5">
+    <div class="mb-3" style="font-size: 3rem;">✅</div>
+    <h2 class="h3 mb-2">Thank you for your response!</h2>
+    <p class="text-muted mb-4">Your answers will help shape a better, more user-centred identity management system.</p>
+    <a href="index.html" class="btn btn-outline-primary">Back to NatID Platform</a>
+  </div>
+
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Progress bar — update as user fills required fields
+  const requiredNames = ['q1', 'q3', 'q6_bank', 'q6_hospital', 'q6_employer', 'q6_online', 'q7', 'q9', 'q11'];
+  const totalRequired = requiredNames.length;
+
+  function updateProgress() {
+    let answered = 0;
+    requiredNames.forEach(name => {
+      const el = document.querySelector(`[name="${name}"]:checked`);
+      if (el) answered++;
+    });
+    const pct = Math.round((answered / totalRequired) * 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+
+    // Section label heuristic
+    if (answered <= 2) document.getElementById('progress-label').textContent = 'Section 1 of 4';
+    else if (answered <= 4) document.getElementById('progress-label').textContent = 'Section 2 of 4';
+    else if (answered <= 7) document.getElementById('progress-label').textContent = 'Section 3 of 4';
+    else document.getElementById('progress-label').textContent = 'Section 4 of 4';
+  }
+
+  document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(el => {
+    el.addEventListener('change', updateProgress);
+  });
+
+  // Textarea character counter
+  const q12 = document.getElementById('q12');
+  q12.addEventListener('input', () => {
+    document.getElementById('q12-count').textContent = q12.value.length;
+  });
+
+  // Q10 max 3 checkboxes
+  const q10cbs = document.querySelectorAll('.q10-cb');
+  q10cbs.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = document.querySelectorAll('.q10-cb:checked');
+      const msg = document.getElementById('q10-limit-msg');
+      if (checked.length > 3) {
+        cb.checked = false;
+        msg.style.display = 'block';
+      } else {
+        msg.style.display = 'none';
+      }
+    });
+  });
+
+  // Form submission
+  document.getElementById('survey-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Validate required radios
+    let valid = true;
+    requiredNames.forEach(name => {
+      if (!document.querySelector(`[name="${name}"]:checked`)) {
+        valid = false;
+      }
+    });
+
+    // Validate at least one Q2 checkbox
+    if (!document.querySelector('.q2-cb:checked')) valid = false;
+
+    // Validate at least one Q10 checkbox
+    if (!document.querySelector('.q10-cb:checked')) valid = false;
+
+    if (!valid) {
+      alert('Please answer all required questions (marked with *) before submitting.');
+      return;
+    }
+
+    // Collect responses
+    const data = {};
+    new FormData(this).forEach((val, key) => {
+      if (data[key]) {
+        data[key] = Array.isArray(data[key]) ? [...data[key], val] : [data[key], val];
+      } else {
+        data[key] = val;
+      }
+    });
+
+    console.log('Survey response:', JSON.stringify(data, null, 2));
+
+    // Show thank-you screen
+    document.getElementById('survey-form').style.display = 'none';
+    document.getElementById('thankyou').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+</body>
+</html>
