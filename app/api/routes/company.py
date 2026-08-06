@@ -112,8 +112,6 @@ def login_company(body: CompanyLoginRequest, db: Session = Depends(get_db)):
     company = db.query(Company).filter(Company.email == body.email).first()
     if not company or not verify_password(body.password, company.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if not company.is_approved:
-        raise HTTPException(status_code=403, detail="Your company account is pending admin approval")
     if not company.is_active:
         raise HTTPException(status_code=403, detail="This company account has been disabled")
 
@@ -126,6 +124,7 @@ def login_company(body: CompanyLoginRequest, db: Session = Depends(get_db)):
     return {
         "access_token": token,
         "token_type": "bearer",
+        "is_approved": company.is_approved,
         "approved_scopes": scopes_list
     }
 

@@ -28,55 +28,53 @@
     <div class="card-body">
       <table class="table">
         <thead>
-          <tr><th>Name</th><th>Email</th><th>Registered</th><th>Docs</th><th>Status</th><th>Action</th></tr>
+          <tr><th>Username</th><th>Email</th><th>Registered</th><th>Status</th><th>Action</th></tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>Fatima Al-Zahra</td>
-            <td>fatima@example.com</td>
-            <td>18 Jun</td>
-            <td>2</td>
-            <td><span class="status-pending">Pending</span></td>
-            <td><a href="user-review.html" class="btn btn-sm btn-primary">Review</a></td>
-          </tr>
-          <tr>
-            <td>Omar Khalid</td>
-            <td>omar@example.com</td>
-            <td>17 Jun</td>
-            <td>1</td>
-            <td><span class="status-pending">Pending</span></td>
-            <td><a href="user-review.html" class="btn btn-sm btn-primary">Review</a></td>
-          </tr>
-          <tr>
-            <td>Abdullah Al-Harbi</td>
-            <td>abdullah@example.com</td>
-            <td>10 Jun</td>
-            <td>2</td>
-            <td><span class="status-approved">Verified</span></td>
-            <td><a href="user-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
-          </tr>
-          <tr>
-            <td>Nora Al-Rashid</td>
-            <td>nora@example.com</td>
-            <td>5 Jun</td>
-            <td>3</td>
-            <td><span class="status-approved">Verified</span></td>
-            <td><a href="user-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
-          </tr>
-          <tr>
-            <td>Khalid Hassan</td>
-            <td>khalid@example.com</td>
-            <td>1 Jun</td>
-            <td>1</td>
-            <td><span class="status-rejected">Rejected</span></td>
-            <td><a href="user-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
-          </tr>
-        </tbody>
+        <tbody id="usersBody"><tr><td colspan="5">Loading...</td></tr></tbody>
       </table>
     </div>
   </div>
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireAdminAuth();
+
+  async function loadUsers() {
+    const token = getToken('admin_token');
+    try {
+      const users = await get(`${API}/admin/users`, token);
+      const tbody = document.getElementById('usersBody');
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No users yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = users.map(u => {
+        let statusHtml;
+        if (u.is_verified) {
+          statusHtml = '<span class="status-approved">Verified</span>';
+        } else if (!u.is_active) {
+          statusHtml = '<span class="status-rejected">Rejected</span>';
+        } else {
+          statusHtml = '<span class="status-pending">Pending</span>';
+        }
+        const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username;
+        const date = new Date(u.created_at).toLocaleDateString();
+        return `
+          <tr>
+            <td>${name}</td>
+            <td class="text-muted small">${u.email}</td>
+            <td class="text-muted small">${date}</td>
+            <td>${statusHtml}</td>
+            <td><a href="user-review.html?id=${u.id}" class="btn btn-sm ${u.is_verified ? 'btn-outline-secondary' : 'btn-primary'}">${u.is_verified ? 'View' : 'Review'}</a></td>
+          </tr>`;
+      }).join('');
+    } catch (err) {
+      document.getElementById('usersBody').innerHTML = `<tr><td colspan="5" class="text-danger">${err.message}</td></tr>`;
+    }
+  }
+
+  loadUsers();
+</script>
 </body>
 </html>

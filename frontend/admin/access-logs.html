@@ -25,131 +25,48 @@
   <h4>Access Logs</h4>
   <p class="text-muted">Every API call made by a company is recorded here for auditing purposes.</p>
 
-  <!-- Filters -->
-  <div class="card mb-3">
-    <div class="card-body">
-      <h6>Filter Logs</h6>
-      <div class="row g-2">
-        <div class="col-md-3">
-          <label class="form-label small">Company</label>
-          <select class="form-select form-select-sm">
-            <option>All companies</option>
-            <option>National Bank</option>
-            <option>City Hospital</option>
-            <option>Ministry of HR</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label small">Scope</label>
-          <select class="form-select form-select-sm">
-            <option>All scopes</option>
-            <option>name:legal</option>
-            <option>name:preferred</option>
-            <option>name:professional</option>
-            <option>name:religious</option>
-            <option>profile:basic</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label small">Status</label>
-          <select class="form-select form-select-sm">
-            <option>All</option>
-            <option>200 OK</option>
-            <option>401 Unauthorized</option>
-            <option>403 Forbidden</option>
-          </select>
-        </div>
-        <div class="col-md-3 d-flex align-items-end">
-          <button class="btn btn-sm btn-primary w-100">Filter</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Logs table -->
   <div class="card">
     <div class="card-body">
       <table class="table">
         <thead>
-          <tr>
-            <th>#</th>
-            <th>Company</th>
-            <th>User ID</th>
-            <th>Scope Requested</th>
-            <th>Data Returned</th>
-            <th>Status</th>
-            <th>IP Address</th>
-            <th>Date & Time</th>
-          </tr>
+          <tr><th>#</th><th>Company</th><th>User ID</th><th>Scope</th><th>Endpoint</th><th>Status</th><th>Date & Time</th></tr>
         </thead>
-        <tbody>
-          <tr>
-            <td class="text-muted small">1</td>
-            <td>National Bank</td>
-            <td>#1042</td>
-            <td><span class="scope-tag">name:legal</span></td>
-            <td class="text-muted small">Legal full name</td>
-            <td><span class="status-approved">200 OK</span></td>
-            <td class="text-muted small">192.168.1.10</td>
-            <td class="text-muted small">19 Jun 2026 14:32</td>
-          </tr>
-          <tr>
-            <td class="text-muted small">2</td>
-            <td>City Hospital</td>
-            <td>#1039</td>
-            <td><span class="scope-tag">profile:basic</span></td>
-            <td class="text-muted small">Preferred name + nationality</td>
-            <td><span class="status-approved">200 OK</span></td>
-            <td class="text-muted small">10.0.0.5</td>
-            <td class="text-muted small">19 Jun 2026 11:05</td>
-          </tr>
-          <tr>
-            <td class="text-muted small">3</td>
-            <td>National Bank</td>
-            <td>#1041</td>
-            <td><span class="scope-tag">name:legal</span></td>
-            <td class="text-muted small">—</td>
-            <td><span class="status-rejected">401 Unauthorized</span></td>
-            <td class="text-muted small">192.168.1.10</td>
-            <td class="text-muted small">18 Jun 2026 09:44</td>
-          </tr>
-          <tr>
-            <td class="text-muted small">4</td>
-            <td>Ministry of HR</td>
-            <td>#1042</td>
-            <td><span class="scope-tag">name:professional</span></td>
-            <td class="text-muted small">Professional name</td>
-            <td><span class="status-approved">200 OK</span></td>
-            <td class="text-muted small">172.16.0.3</td>
-            <td class="text-muted small">14 Jun 2026 16:05</td>
-          </tr>
-          <tr>
-            <td class="text-muted small">5</td>
-            <td>National Bank</td>
-            <td>#1038</td>
-            <td><span class="scope-tag">name:religious</span></td>
-            <td class="text-muted small">—</td>
-            <td><span class="status-rejected">403 Forbidden</span></td>
-            <td class="text-muted small">192.168.1.10</td>
-            <td class="text-muted small">13 Jun 2026 10:20</td>
-          </tr>
-          <tr>
-            <td class="text-muted small">6</td>
-            <td>City Hospital</td>
-            <td>#1044</td>
-            <td><span class="scope-tag">name:legal</span></td>
-            <td class="text-muted small">Legal full name</td>
-            <td><span class="status-approved">200 OK</span></td>
-            <td class="text-muted small">10.0.0.5</td>
-            <td class="text-muted small">12 Jun 2026 08:15</td>
-          </tr>
-        </tbody>
+        <tbody id="logsBody"><tr><td colspan="7">Loading...</td></tr></tbody>
       </table>
-      <p class="text-muted small">Note: 401 means the token was invalid. 403 means the company tried to access a scope they are not approved for.</p>
+      <p class="text-muted small">401 = invalid token. 403 = scope not approved for that company.</p>
     </div>
   </div>
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireAdminAuth();
+
+  async function loadLogs() {
+    const token = getToken('admin_token');
+    try {
+      const logs = await get(`${API}/admin/access-logs`, token);
+      const tbody = document.getElementById('logsBody');
+      if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-muted">No access logs yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = logs.map((log, i) => `
+        <tr>
+          <td class="text-muted small">${i + 1}</td>
+          <td>${log.company_name}</td>
+          <td class="text-muted small">#${log.user_id}</td>
+          <td><span class="scope-tag">${log.scope_used}</span></td>
+          <td class="text-muted small">${log.endpoint}</td>
+          <td><span class="badge ${log.status_code === 200 ? 'bg-success' : 'bg-danger'}">${log.status_code}</span></td>
+          <td class="text-muted small">${new Date(log.created_at).toLocaleString()}</td>
+        </tr>`).join('');
+    } catch (err) {
+      document.getElementById('logsBody').innerHTML = `<tr><td colspan="7" class="text-danger">${err.message}</td></tr>`;
+    }
+  }
+
+  loadLogs();
+</script>
 </body>
 </html>

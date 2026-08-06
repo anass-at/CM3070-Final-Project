@@ -28,55 +28,57 @@
     <div class="card-body">
       <table class="table">
         <thead>
-          <tr><th>Company</th><th>Sector</th><th>Registered</th><th>Scopes</th><th>Status</th><th>Action</th></tr>
+          <tr><th>Company</th><th>Type</th><th>Registered</th><th>Requested Scopes</th><th>Status</th><th>Action</th></tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>City Hospital</td>
-            <td>Hospital</td>
-            <td>17 Jun</td>
-            <td><span class="scope-tag">name:legal</span> <span class="scope-tag">profile:basic</span></td>
-            <td><span class="status-pending">Pending</span></td>
-            <td><a href="company-review.html" class="btn btn-sm btn-primary">Review</a></td>
-          </tr>
-          <tr>
-            <td>TeleConnect</td>
-            <td>Telecom</td>
-            <td>15 Jun</td>
-            <td><span class="scope-tag">name:preferred</span></td>
-            <td><span class="status-pending">Pending</span></td>
-            <td><a href="company-review.html" class="btn btn-sm btn-primary">Review</a></td>
-          </tr>
-          <tr>
-            <td>National Bank</td>
-            <td>Bank</td>
-            <td>10 Jun</td>
-            <td><span class="scope-tag">name:legal</span> <span class="scope-tag">profile:basic</span></td>
-            <td><span class="status-approved">Approved</span></td>
-            <td><a href="company-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
-          </tr>
-          <tr>
-            <td>Ministry of HR</td>
-            <td>Government</td>
-            <td>2 Jun</td>
-            <td><span class="scope-tag">name:legal</span> <span class="scope-tag">name:professional</span></td>
-            <td><span class="status-approved">Approved</span></td>
-            <td><a href="company-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
-          </tr>
-          <tr>
-            <td>FastCar Rentals</td>
-            <td>Other</td>
-            <td>28 May</td>
-            <td><span class="scope-tag">name:legal</span></td>
-            <td><span class="status-rejected">Rejected</span></td>
-            <td><a href="company-review.html" class="btn btn-sm btn-outline-secondary">View</a></td>
-          </tr>
-        </tbody>
+        <tbody id="companiesBody"><tr><td colspan="6">Loading...</td></tr></tbody>
       </table>
     </div>
   </div>
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireAdminAuth();
+
+  async function loadCompanies() {
+    const token = getToken('admin_token');
+    try {
+      const companies = await get(`${API}/admin/companies`, token);
+      const tbody = document.getElementById('companiesBody');
+      if (companies.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-muted">No companies yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = companies.map(c => {
+        let statusHtml;
+        if (c.is_approved) {
+          statusHtml = '<span class="status-approved">Approved</span>';
+        } else if (!c.is_active) {
+          statusHtml = '<span class="status-rejected">Rejected</span>';
+        } else {
+          statusHtml = '<span class="status-pending">Pending</span>';
+        }
+        const scopes = c.requested_scopes
+          ? c.requested_scopes.split(',').map(s => s.trim()).filter(Boolean)
+              .map(s => `<span class="scope-tag">${s}</span>`).join(' ')
+          : '<span class="text-muted small">None requested</span>';
+        const date = new Date(c.created_at).toLocaleDateString();
+        return `
+          <tr>
+            <td>${c.name}</td>
+            <td class="text-muted small">${c.company_type || '—'}</td>
+            <td class="text-muted small">${date}</td>
+            <td>${scopes}</td>
+            <td>${statusHtml}</td>
+            <td><a href="company-review.html?id=${c.id}" class="btn btn-sm ${c.is_approved ? 'btn-outline-secondary' : 'btn-primary'}">${c.is_approved ? 'View' : 'Review'}</a></td>
+          </tr>`;
+      }).join('');
+    } catch (err) {
+      document.getElementById('companiesBody').innerHTML = `<tr><td colspan="6" class="text-danger">${err.message}</td></tr>`;
+    }
+  }
+
+  loadCompanies();
+</script>
 </body>
 </html>
