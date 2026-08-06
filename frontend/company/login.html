@@ -60,12 +60,7 @@
       saveToken('company_token', data.access_token);
       location.href = 'dashboard.html';
     } catch (err) {
-      // 403 means pending approval — give a clear message
-      if (err.message.includes('pending admin approval')) {
-        showError('msg', 'Your company account is pending admin approval. You will be notified once approved.');
-      } else {
-        showError('msg', err.message);
-      }
+      showError('msg', err.message);
       setLoading(btn, false);
     }
   });

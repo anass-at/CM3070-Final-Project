@@ -28,26 +28,26 @@
   <div class="row mb-4">
     <div class="col-md-3">
       <div class="card text-center p-3">
-        <h2>128</h2>
+        <h2 id="totalUsers">—</h2>
         <p class="text-muted">Total Users</p>
       </div>
     </div>
     <div class="col-md-3">
       <div class="card text-center p-3">
-        <h2 class="text-warning">4</h2>
-        <p class="text-muted">Pending User Verification</p>
+        <h2 id="pendingUsers" class="text-warning">—</h2>
+        <p class="text-muted">Pending Verification</p>
       </div>
     </div>
     <div class="col-md-3">
       <div class="card text-center p-3">
-        <h2>17</h2>
+        <h2 id="approvedCompanies">—</h2>
         <p class="text-muted">Approved Companies</p>
       </div>
     </div>
     <div class="col-md-3">
       <div class="card text-center p-3">
-        <h2 class="text-warning">2</h2>
-        <p class="text-muted">Pending Company Approval</p>
+        <h2 id="pendingCompanies" class="text-warning">—</h2>
+        <p class="text-muted">Pending Approval</p>
       </div>
     </div>
   </div>
@@ -58,12 +58,8 @@
         <div class="card-body">
           <h6>Users Waiting for Verification</h6>
           <table class="table table-sm">
-            <thead><tr><th>Name</th><th>Submitted</th><th></th></tr></thead>
-            <tbody>
-              <tr><td>Fatima Al-Zahra</td><td>18 Jun</td><td><a href="user-review.html" class="btn btn-sm btn-primary">Review</a></td></tr>
-              <tr><td>Omar Khalid</td><td>17 Jun</td><td><a href="user-review.html" class="btn btn-sm btn-primary">Review</a></td></tr>
-              <tr><td>Sara Mohammed</td><td>16 Jun</td><td><a href="user-review.html" class="btn btn-sm btn-primary">Review</a></td></tr>
-            </tbody>
+            <thead><tr><th>Username</th><th>Email</th><th></th></tr></thead>
+            <tbody id="pendingUsersBody"><tr><td colspan="3">Loading...</td></tr></tbody>
           </table>
           <a href="users.html">See all users →</a>
         </div>
@@ -75,11 +71,8 @@
         <div class="card-body">
           <h6>Companies Waiting for Approval</h6>
           <table class="table table-sm">
-            <thead><tr><th>Company</th><th>Sector</th><th></th></tr></thead>
-            <tbody>
-              <tr><td>City Hospital</td><td>Hospital</td><td><a href="company-review.html" class="btn btn-sm btn-primary">Review</a></td></tr>
-              <tr><td>TeleConnect</td><td>Telecom</td><td><a href="company-review.html" class="btn btn-sm btn-primary">Review</a></td></tr>
-            </tbody>
+            <thead><tr><th>Company</th><th>Type</th><th></th></tr></thead>
+            <tbody id="pendingCompaniesBody"><tr><td colspan="3">Loading...</td></tr></tbody>
           </table>
           <a href="companies.html">See all companies →</a>
         </div>
@@ -89,5 +82,45 @@
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireAdminAuth();
+
+  const token = getToken('admin_token');
+
+  async function loadDashboard() {
+    const [users, companies] = await Promise.all([
+      get(`${API}/admin/users`, token).catch(() => []),
+      get(`${API}/admin/companies`, token).catch(() => []),
+    ]);
+
+    const pendingUsers = users.filter(u => !u.is_verified && u.is_active);
+    const pendingComps = companies.filter(c => !c.is_approved && c.is_active);
+
+    document.getElementById('totalUsers').textContent = users.length;
+    document.getElementById('pendingUsers').textContent = pendingUsers.length;
+    document.getElementById('approvedCompanies').textContent = companies.filter(c => c.is_approved).length;
+    document.getElementById('pendingCompanies').textContent = pendingComps.length;
+
+    document.getElementById('pendingUsersBody').innerHTML = pendingUsers.length
+      ? pendingUsers.slice(0, 5).map(u => `
+          <tr>
+            <td>${u.username}</td>
+            <td class="text-muted small">${u.email}</td>
+            <td><a href="user-review.html?id=${u.id}" class="btn btn-sm btn-primary">Review</a></td>
+          </tr>`).join('')
+      : '<tr><td colspan="3" class="text-muted">No pending users.</td></tr>';
+
+    document.getElementById('pendingCompaniesBody').innerHTML = pendingComps.length
+      ? pendingComps.slice(0, 5).map(c => `
+          <tr>
+            <td>${c.name}</td>
+            <td class="text-muted small">${c.company_type || '—'}</td>
+            <td><a href="company-review.html?id=${c.id}" class="btn btn-sm btn-primary">Review</a></td>
+          </tr>`).join('')
+      : '<tr><td colspan="3" class="text-muted">No pending companies.</td></tr>';
+  }
+
+  loadDashboard();
+</script>
 </body>
 </html>

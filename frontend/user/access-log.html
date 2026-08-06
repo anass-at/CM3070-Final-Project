@@ -29,27 +29,10 @@
     <div class="card-body">
       <table class="table">
         <thead>
-          <tr><th>Company</th><th>What they accessed</th><th>What was returned</th><th>Date</th></tr>
+          <tr><th>Company</th><th>Scope used</th><th>Endpoint</th><th>Status</th><th>Date</th></tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>National Bank</td>
-            <td><span class="scope-tag">name:legal</span></td>
-            <td>Legal full name</td>
-            <td>19 Jun 2026</td>
-          </tr>
-          <tr>
-            <td>City Hospital</td>
-            <td><span class="scope-tag">profile:basic</span></td>
-            <td>Preferred name + nationality</td>
-            <td>17 Jun 2026</td>
-          </tr>
-          <tr>
-            <td>Ministry of HR</td>
-            <td><span class="scope-tag">name:professional</span></td>
-            <td>Professional name</td>
-            <td>14 Jun 2026</td>
-          </tr>
+        <tbody id="logBody">
+          <tr><td colspan="5" class="text-muted">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -57,5 +40,33 @@
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireUserAuth();
+
+  async function loadLogs() {
+    const token = getToken('user_token');
+    try {
+      const logs = await get(`${API}/auth/access-logs`, token);
+      const tbody = document.getElementById('logBody');
+      if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No access records yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = logs.map(log => `
+        <tr>
+          <td>${log.company_name}</td>
+          <td><span class="scope-tag">${log.scope_used}</span></td>
+          <td><small class="text-muted">${log.endpoint}</small></td>
+          <td><span class="badge ${log.status_code === 200 ? 'bg-success' : 'bg-danger'}">${log.status_code}</span></td>
+          <td>${new Date(log.created_at).toLocaleString()}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      document.getElementById('logBody').innerHTML = `<tr><td colspan="5" class="text-danger">${err.message}</td></tr>`;
+    }
+  }
+
+  loadLogs();
+</script>
 </body>
 </html>

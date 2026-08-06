@@ -23,52 +23,91 @@
 
 <div class="container mt-4">
   <h4>My Documents</h4>
-  <p class="text-muted">Upload official documents for identity verification. These are only seen by the admin and are never shared with companies.</p>
+  <p class="text-muted">Upload an official identity document for admin verification. Documents are never shared with companies.</p>
 
-  <div class="card">
+  <div id="msg" style="display:none"></div>
+
+  <div class="card mb-4">
     <div class="card-body">
-      <h6>Uploaded Documents</h6>
-      <table class="table">
-        <thead><tr><th>Document</th><th>Uploaded</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>National ID Card</td>
-            <td>11 Jun 2026</td>
-            <td><span class="status-approved">Accepted</span></td>
-          </tr>
-          <tr>
-            <td>Passport</td>
-            <td>11 Jun 2026</td>
-            <td><span class="status-pending">Pending review</span></td>
-          </tr>
-        </tbody>
-      </table>
+      <h6>Current Document</h6>
+      <div id="docStatus">Loading...</div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-body">
-      <h6>Upload New Document</h6>
-      <form onsubmit="event.preventDefault(); alert('Document uploaded! Waiting for admin review.')">
-        <div class="mb-2">
-          <label class="form-label">Document Type</label>
-          <select class="form-select">
-            <option>National ID</option>
-            <option>Passport</option>
-            <option>Driver's License</option>
-            <option>Birth Certificate</option>
-          </select>
-        </div>
+      <h6>Upload Document</h6>
+      <form id="uploadForm">
         <div class="mb-3">
           <label class="form-label">File</label>
-          <input type="file" class="form-control">
+          <input type="file" id="docFile" class="form-control" required>
+          <div class="form-text">Accepted: images, PDF. Max 10MB.</div>
         </div>
-        <button type="submit" class="btn btn-primary">Upload</button>
+        <button type="submit" id="uploadBtn" data-label="Upload" class="btn btn-primary">Upload</button>
       </form>
     </div>
   </div>
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireUserAuth();
+
+  const token = getToken('user_token');
+
+  async function loadDocStatus() {
+    try {
+      const user = await get(`${API}/auth/me`, token);
+      const el = document.getElementById('docStatus');
+      if (user.document_path) {
+        const filename = user.document_path.split('/').pop();
+        el.innerHTML = `
+          <div class="d-flex align-items-center gap-2">
+            <span class="status-approved">&#10003; Uploaded</span>
+            <span class="text-muted small">${filename}</span>
+            ${user.is_verified
+              ? '<span class="badge bg-success">Verified by admin</span>'
+              : '<span class="badge bg-warning text-dark">Pending review</span>'}
+          </div>`;
+      } else {
+        el.innerHTML = '<span class="text-muted">No document uploaded yet.</span>';
+      }
+    } catch (err) {
+      document.getElementById('docStatus').textContent = 'Could not load document status.';
+    }
+  }
+
+  document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('uploadBtn');
+    const file = document.getElementById('docFile').files[0];
+    if (!file) return;
+
+    setLoading(btn, true);
+    hideAlert('msg');
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${API}/auth/upload-document`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Upload failed');
+      showSuccess('msg', 'Document uploaded successfully. An admin will review it shortly.');
+      document.getElementById('uploadForm').reset();
+      loadDocStatus();
+    } catch (err) {
+      showError('msg', err.message);
+    } finally {
+      setLoading(btn, false);
+    }
+  });
+
+  loadDocStatus();
+</script>
 </body>
 </html>
