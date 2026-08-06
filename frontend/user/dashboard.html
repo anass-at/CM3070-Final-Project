@@ -22,25 +22,17 @@
 </nav>
 
 <div class="container mt-4">
-  <h4>Welcome, Abdullah</h4>
+  <h4>Welcome, <span id="welcomeName">...</span></h4>
 
   <!-- Status -->
-  <div class="alert alert-warning mt-3">
-    <strong>Status: Pending Verification</strong> — Your documents have been submitted and are waiting for admin review.
-  </div>
+  <div id="statusBadge" class="alert alert-warning mt-3">Loading...</div>
 
   <div class="row">
     <div class="col-md-6">
       <div class="card">
         <div class="card-body">
           <h5>Profile Completion</h5>
-          <ul>
-            <li>&#10003; Email and account created</li>
-            <li>&#10003; Legal name added</li>
-            <li>&#10003; Documents uploaded (2)</li>
-            <li>&#10007; Professional name — <a href="profile.html">add it</a></li>
-            <li>&#10007; Profile photo — <a href="profile.html">add it</a></li>
-          </ul>
+          <ul id="profileList"><li>Loading...</li></ul>
           <a href="profile.html" class="btn btn-sm btn-outline-primary">Edit Profile</a>
         </div>
       </div>
@@ -52,10 +44,7 @@
           <h5>Recent Access to My Data</h5>
           <table class="table table-sm">
             <thead><tr><th>Company</th><th>Scope</th><th>Date</th></tr></thead>
-            <tbody>
-              <tr><td>National Bank</td><td><span class="scope-tag">name:legal</span></td><td>19 Jun 2026</td></tr>
-              <tr><td>City Hospital</td><td><span class="scope-tag">profile:basic</span></td><td>17 Jun 2026</td></tr>
-            </tbody>
+            <tbody id="accessLogBody"><tr><td colspan="3">Loading...</td></tr></tbody>
           </table>
           <a href="access-log.html" class="btn btn-sm btn-outline-secondary">See full log</a>
         </div>
@@ -65,5 +54,54 @@
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireUserAuth();
+
+  async function loadDashboard() {
+    const token = getToken('user_token');
+    try {
+      const user = await get(`${API}/auth/me`, token);
+      const name = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username;
+      document.getElementById('welcomeName').textContent = name;
+
+      if (user.is_verified) {
+        document.getElementById('statusBadge').className = 'alert alert-success mt-3';
+        document.getElementById('statusBadge').innerHTML = '<strong>Status: Verified</strong> — Your identity has been verified.';
+      } else {
+        document.getElementById('statusBadge').className = 'alert alert-warning mt-3';
+        document.getElementById('statusBadge').innerHTML = '<strong>Status: Pending Verification</strong> — Your documents are waiting for admin review.';
+      }
+
+      const profileItems = [
+        { done: true, label: 'Email and account created' },
+        { done: !!(user.first_name && user.last_name), label: 'Legal name added', link: 'profile.html' },
+        { done: !!user.national_id, label: 'National ID added', link: 'profile.html' },
+        { done: !!user.phone_number, label: 'Phone number added', link: 'profile.html' },
+        { done: !!user.document_path, label: 'Document uploaded', link: 'documents.html' },
+      ];
+      document.getElementById('profileList').innerHTML = profileItems.map(item =>
+        `<li>${item.done ? '&#10003;' : '&#10007;'} ${item.label}${!item.done && item.link ? ` — <a href="${item.link}">add it</a>` : ''}</li>`
+      ).join('');
+    } catch (err) {
+      console.error('Failed to load user data:', err);
+    }
+
+    try {
+      const logs = await get(`${API}/auth/access-logs`, token);
+      const tbody = document.getElementById('accessLogBody');
+      if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-muted">No access yet</td></tr>';
+      } else {
+        tbody.innerHTML = logs.slice(0, 3).map(log =>
+          `<tr><td>${log.company_name}</td><td><span class="scope-tag">${log.scope_used}</span></td><td>${new Date(log.created_at).toLocaleDateString()}</td></tr>`
+        ).join('');
+      }
+    } catch (err) {
+      document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="3" class="text-muted">Could not load logs</td></tr>';
+    }
+  }
+
+  loadDashboard();
+</script>
 </body>
 </html>
