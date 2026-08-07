@@ -85,39 +85,81 @@
 <script>
   requireAdminAuth();
 
-  const token = getToken('admin_token');
-
   async function loadDashboard() {
-    const [users, companies] = await Promise.all([
-      get(`${API}/admin/users`, token).catch(() => []),
-      get(`${API}/admin/companies`, token).catch(() => []),
-    ]);
+    const token = getToken('admin_token');
 
-    const pendingUsers = users.filter(u => !u.is_verified && u.is_active);
-    const pendingComps = companies.filter(c => !c.is_approved && c.is_active);
+    // load users and companies from the API
+    let users = [];
+    let companies = [];
 
+    try {
+      users = await get(API + '/admin/users', token);
+    } catch (err) {
+      console.log('Could not load users:', err.message);
+    }
+
+    try {
+      companies = await get(API + '/admin/companies', token);
+    } catch (err) {
+      console.log('Could not load companies:', err.message);
+    }
+
+    // count pending ones
+    let pendingUsers = [];
+    let pendingComps = [];
+    let approvedCount = 0;
+
+    for (let i = 0; i < users.length; i++) {
+      if (!users[i].is_verified && users[i].is_active) {
+        pendingUsers.push(users[i]);
+      }
+    }
+
+    for (let i = 0; i < companies.length; i++) {
+      if (companies[i].is_approved) {
+        approvedCount++;
+      } else if (companies[i].is_active) {
+        pendingComps.push(companies[i]);
+      }
+    }
+
+    // update stat cards
     document.getElementById('totalUsers').textContent = users.length;
     document.getElementById('pendingUsers').textContent = pendingUsers.length;
-    document.getElementById('approvedCompanies').textContent = companies.filter(c => c.is_approved).length;
+    document.getElementById('approvedCompanies').textContent = approvedCount;
     document.getElementById('pendingCompanies').textContent = pendingComps.length;
 
-    document.getElementById('pendingUsersBody').innerHTML = pendingUsers.length
-      ? pendingUsers.slice(0, 5).map(u => `
-          <tr>
-            <td>${u.username}</td>
-            <td class="text-muted small">${u.email}</td>
-            <td><a href="user-review.html?id=${u.id}" class="btn btn-sm btn-primary">Review</a></td>
-          </tr>`).join('')
-      : '<tr><td colspan="3" class="text-muted">No pending users.</td></tr>';
+    // fill pending users table
+    const usersTable = document.getElementById('pendingUsersBody');
+    if (pendingUsers.length === 0) {
+      usersTable.innerHTML = '<tr><td colspan="3" class="text-muted">No pending users.</td></tr>';
+    } else {
+      usersTable.innerHTML = '';
+      for (let i = 0; i < Math.min(pendingUsers.length, 5); i++) {
+        const u = pendingUsers[i];
+        usersTable.innerHTML += '<tr>' +
+          '<td>' + u.username + '</td>' +
+          '<td class="text-muted small">' + u.email + '</td>' +
+          '<td><a href="user-review.html?id=' + u.id + '" class="btn btn-sm btn-primary">Review</a></td>' +
+          '</tr>';
+      }
+    }
 
-    document.getElementById('pendingCompaniesBody').innerHTML = pendingComps.length
-      ? pendingComps.slice(0, 5).map(c => `
-          <tr>
-            <td>${c.name}</td>
-            <td class="text-muted small">${c.company_type || '—'}</td>
-            <td><a href="company-review.html?id=${c.id}" class="btn btn-sm btn-primary">Review</a></td>
-          </tr>`).join('')
-      : '<tr><td colspan="3" class="text-muted">No pending companies.</td></tr>';
+    // fill pending companies table
+    const compsTable = document.getElementById('pendingCompaniesBody');
+    if (pendingComps.length === 0) {
+      compsTable.innerHTML = '<tr><td colspan="3" class="text-muted">No pending companies.</td></tr>';
+    } else {
+      compsTable.innerHTML = '';
+      for (let i = 0; i < Math.min(pendingComps.length, 5); i++) {
+        const c = pendingComps[i];
+        compsTable.innerHTML += '<tr>' +
+          '<td>' + c.name + '</td>' +
+          '<td class="text-muted small">' + (c.company_type || '—') + '</td>' +
+          '<td><a href="company-review.html?id=' + c.id + '" class="btn btn-sm btn-primary">Review</a></td>' +
+          '</tr>';
+      }
+    }
   }
 
   loadDashboard();

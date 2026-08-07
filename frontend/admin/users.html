@@ -42,14 +42,22 @@
 
   async function loadUsers() {
     const token = getToken('admin_token');
+    const tbody = document.getElementById('usersBody');
+
     try {
-      const users = await get(`${API}/admin/users`, token);
-      const tbody = document.getElementById('usersBody');
+      const users = await get(API + '/admin/users', token);
+
       if (users.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No users yet.</td></tr>';
         return;
       }
-      tbody.innerHTML = users.map(u => {
+
+      tbody.innerHTML = '';
+
+      for (let i = 0; i < users.length; i++) {
+        const u = users[i];
+
+        // figure out the status badge
         let statusHtml;
         if (u.is_verified) {
           statusHtml = '<span class="status-approved">Verified</span>';
@@ -58,19 +66,29 @@
         } else {
           statusHtml = '<span class="status-pending">Pending</span>';
         }
-        const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username;
+
+        // use full name if available, fallback to username
+        let displayName = u.username;
+        if (u.first_name && u.last_name) {
+          displayName = u.first_name + ' ' + u.last_name;
+        } else if (u.first_name) {
+          displayName = u.first_name;
+        }
+
         const date = new Date(u.created_at).toLocaleDateString();
-        return `
-          <tr>
-            <td>${name}</td>
-            <td class="text-muted small">${u.email}</td>
-            <td class="text-muted small">${date}</td>
-            <td>${statusHtml}</td>
-            <td><a href="user-review.html?id=${u.id}" class="btn btn-sm ${u.is_verified ? 'btn-outline-secondary' : 'btn-primary'}">${u.is_verified ? 'View' : 'Review'}</a></td>
-          </tr>`;
-      }).join('');
+        const btnClass = u.is_verified ? 'btn-outline-secondary' : 'btn-primary';
+        const btnLabel = u.is_verified ? 'View' : 'Review';
+
+        tbody.innerHTML += '<tr>' +
+          '<td>' + displayName + '</td>' +
+          '<td class="text-muted small">' + u.email + '</td>' +
+          '<td class="text-muted small">' + date + '</td>' +
+          '<td>' + statusHtml + '</td>' +
+          '<td><a href="user-review.html?id=' + u.id + '" class="btn btn-sm ' + btnClass + '">' + btnLabel + '</a></td>' +
+          '</tr>';
+      }
     } catch (err) {
-      document.getElementById('usersBody').innerHTML = `<tr><td colspan="5" class="text-danger">${err.message}</td></tr>`;
+      tbody.innerHTML = '<tr><td colspan="5" class="text-danger">' + err.message + '</td></tr>';
     }
   }
 

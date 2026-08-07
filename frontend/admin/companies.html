@@ -42,14 +42,21 @@
 
   async function loadCompanies() {
     const token = getToken('admin_token');
+    const tbody = document.getElementById('companiesBody');
+
     try {
-      const companies = await get(`${API}/admin/companies`, token);
-      const tbody = document.getElementById('companiesBody');
+      const companies = await get(API + '/admin/companies', token);
+
       if (companies.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-muted">No companies yet.</td></tr>';
         return;
       }
-      tbody.innerHTML = companies.map(c => {
+
+      tbody.innerHTML = '';
+
+      for (let i = 0; i < companies.length; i++) {
+        const c = companies[i];
+
         let statusHtml;
         if (c.is_approved) {
           statusHtml = '<span class="status-approved">Approved</span>';
@@ -58,23 +65,33 @@
         } else {
           statusHtml = '<span class="status-pending">Pending</span>';
         }
-        const scopes = c.requested_scopes
-          ? c.requested_scopes.split(',').map(s => s.trim()).filter(Boolean)
-              .map(s => `<span class="scope-tag">${s}</span>`).join(' ')
-          : '<span class="text-muted small">None requested</span>';
+
+        // build the scope tags
+        let scopesHtml = '<span class="text-muted small">None requested</span>';
+        if (c.requested_scopes && c.requested_scopes.trim() !== '') {
+          const scopeList = c.requested_scopes.split(',');
+          scopesHtml = '';
+          for (let j = 0; j < scopeList.length; j++) {
+            const s = scopeList[j].trim();
+            if (s) scopesHtml += '<span class="scope-tag">' + s + '</span> ';
+          }
+        }
+
         const date = new Date(c.created_at).toLocaleDateString();
-        return `
-          <tr>
-            <td>${c.name}</td>
-            <td class="text-muted small">${c.company_type || '—'}</td>
-            <td class="text-muted small">${date}</td>
-            <td>${scopes}</td>
-            <td>${statusHtml}</td>
-            <td><a href="company-review.html?id=${c.id}" class="btn btn-sm ${c.is_approved ? 'btn-outline-secondary' : 'btn-primary'}">${c.is_approved ? 'View' : 'Review'}</a></td>
-          </tr>`;
-      }).join('');
+        const btnClass = c.is_approved ? 'btn-outline-secondary' : 'btn-primary';
+        const btnLabel = c.is_approved ? 'View' : 'Review';
+
+        tbody.innerHTML += '<tr>' +
+          '<td>' + c.name + '</td>' +
+          '<td class="text-muted small">' + (c.company_type || '—') + '</td>' +
+          '<td class="text-muted small">' + date + '</td>' +
+          '<td>' + scopesHtml + '</td>' +
+          '<td>' + statusHtml + '</td>' +
+          '<td><a href="company-review.html?id=' + c.id + '" class="btn btn-sm ' + btnClass + '">' + btnLabel + '</a></td>' +
+          '</tr>';
+      }
     } catch (err) {
-      document.getElementById('companiesBody').innerHTML = `<tr><td colspan="6" class="text-danger">${err.message}</td></tr>`;
+      tbody.innerHTML = '<tr><td colspan="6" class="text-danger">' + err.message + '</td></tr>';
     }
   }
 
