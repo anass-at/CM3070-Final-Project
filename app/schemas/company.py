@@ -44,6 +44,8 @@ class CompanyResponse(BaseModel):
     requested_scopes: Optional[str] = None
     scope_justification: Optional[str] = None
     is_approved: bool
+    is_active: bool
     approved_scopes: str
+    hydra_client_id: Optional[str] = None
 
     model_config = {"from_attributes": True}

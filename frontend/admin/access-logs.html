@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Access Logs - NatID Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Admin Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="users.html" class="nav-link d-inline">Users</a>
+      <a href="companies.html" class="nav-link d-inline">Companies</a>
+      <a href="access-logs.html" class="nav-link d-inline">Access Logs</a>
+      <a href="#" onclick="logoutAdmin()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4>Access Logs</h4>
+  <p class="text-muted">Every API call made by a company is recorded here for auditing purposes.</p>
+
+  <div class="card">
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr><th>#</th><th>Company</th><th>User ID</th><th>Scope</th><th>Endpoint</th><th>Status</th><th>Date & Time</th></tr>
+        </thead>
+        <tbody id="logsBody"><tr><td colspan="7">Loading...</td></tr></tbody>
+      </table>
+      <p class="text-muted small">401 = invalid token. 403 = scope not approved for that company.</p>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireAdminAuth();
+
+  async function loadLogs() {
+    const token = getToken('admin_token');
+    try {
+      const logs = await get(`${API}/admin/access-logs`, token);
+      const tbody = document.getElementById('logsBody');
+      if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-muted">No access logs yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = logs.map((log, i) => `
+        <tr>
+          <td class="text-muted small">${i + 1}</td>
+          <td>${log.company_name}</td>
+          <td class="text-muted small">#${log.user_id}</td>
+          <td><span class="scope-tag">${log.scope_used}</span></td>
+          <td class="text-muted small">${log.endpoint}</td>
+          <td><span class="badge ${log.status_code === 200 ? 'bg-success' : 'bg-danger'}">${log.status_code}</span></td>
+          <td class="text-muted small">${new Date(log.created_at).toLocaleString()}</td>
+        </tr>`).join('');
+    } catch (err) {
+      document.getElementById('logsBody').innerHTML = `<tr><td colspan="7" class="text-danger">${err.message}</td></tr>`;
+    }
+  }
+
+  loadLogs();
+</script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Setup Your Organisation - NatID</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+  <style>
+    .step-indicator {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .step-bubble {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      background: #dee2e6;
+      color: #666;
+    }
+    .step-bubble.active {
+      background: #0d6efd;
+      color: white;
+    }
+    .step-bubble.done {
+      background: #198754;
+      color: white;
+    }
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: #dee2e6;
+    }
+    .step-line.done {
+      background: #198754;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Company Portal</span>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+
+      <h4>Set Up Your Organisation</h4>
+      <p class="text-muted">Complete these steps so the admin can review your application. This only takes a few minutes.</p>
+
+      <!-- step indicator -->
+      <div class="step-indicator">
+        <div class="step-bubble active" id="bubble1">1</div>
+        <div class="step-line" id="line1"></div>
+        <div class="step-bubble" id="bubble2">2</div>
+        <div class="step-line" id="line2"></div>
+        <div class="step-bubble" id="bubble3">3</div>
+      </div>
+
+      <div id="globalMsg" style="display:none"></div>
+
+      <!-- Step 1: Organisation details -->
+      <div id="step1">
+        <div class="card">
+          <div class="card-body">
+            <h5>Organisation Details</h5>
+            <p class="text-muted small">Tell us about your organisation. This helps the admin understand who is requesting access to citizen data.</p>
+
+            <form id="detailsForm">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Organisation Type</label>
+                  <select id="company_type" class="form-select" required>
+                    <option value="">-- Select type --</option>
+                    <option value="bank">Bank</option>
+                    <option value="hospital">Hospital</option>
+                    <option value="government">Government</option>
+                    <option value="telecom">Telecom</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="education">Education</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Commercial Registration Number</label>
+                  <input type="text" id="commercial_number" class="form-control" placeholder="e.g. 1234567890">
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Contact Email</label>
+                  <input type="email" id="contact_email" class="form-control" placeholder="contact@company.com">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Contact Phone</label>
+                  <input type="text" id="contact_phone" class="form-control" placeholder="+966 5x xxx xxxx">
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea id="description" class="form-control" rows="3" placeholder="Briefly describe what your organisation does and why you need access to citizen identity data..."></textarea>
+              </div>
+              <button type="submit" id="detailsBtn" data-label="Save & Continue" class="btn btn-primary">Save & Continue</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Scope request -->
+      <div id="step2" style="display:none">
+        <div class="card">
+          <div class="card-body">
+            <h5>Request Data Scopes</h5>
+            <p class="text-muted small">Select only the data fields your organisation actually needs. Requesting more scopes than necessary may slow down your approval. The admin will decide which ones to grant.</p>
+
+            <form id="scopesForm">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Available Scopes</label>
+                <div class="form-text mb-2">Tick the scopes you need and explain why for each one. The admin reads these justifications before deciding what to approve.</div>
+                <table class="table table-bordered">
+                  <thead class="table-light">
+                    <tr><th style="width:40px">Request</th><th style="width:160px">Scope</th><th style="width:180px">What it includes</th><th>Why do you need this?</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:full" id="chk_name_full"></td>
+                      <td><span class="scope-tag">name:full</span></td>
+                      <td class="text-muted small">First, middle, and last name</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_full" rows="2" placeholder="e.g. Required to verify customer identity during account opening"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="profile:basic" id="chk_profile_basic"></td>
+                      <td><span class="scope-tag">profile:basic</span></td>
+                      <td class="text-muted small">Date of birth and location</td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_basic" rows="2" placeholder="e.g. Needed for age verification as required by regulations"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="profile:contact" id="chk_profile_contact"></td>
+                      <td><span class="scope-tag">profile:contact</span></td>
+                      <td class="text-muted small">Phone number</td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_contact" rows="2" placeholder="e.g. Used to send OTP verification codes to customers"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="profile:education" id="chk_profile_education"></td>
+                      <td><span class="scope-tag">profile:education</span></td>
+                      <td class="text-muted small">Education background</td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_education" rows="2" placeholder="e.g. Required to validate academic qualifications for job applications"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="identity:national_id" id="chk_identity_national_id"></td>
+                      <td><span class="scope-tag">identity:national_id</span></td>
+                      <td class="text-muted small">National ID number</td>
+                      <td><textarea class="form-control form-control-sm" id="just_identity_national_id" rows="2" placeholder="e.g. Mandatory for KYC compliance under AML regulations"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="identity:document" id="chk_identity_document"></td>
+                      <td><span class="scope-tag">identity:document</span></td>
+                      <td class="text-muted small">Uploaded identity document</td>
+                      <td><textarea class="form-control form-control-sm" id="just_identity_document" rows="2" placeholder="e.g. Needed to cross-check the document against our records"></textarea></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="button" onclick="goToStep(1)" class="btn btn-outline-secondary">Back</button>
+                <button type="submit" id="scopesBtn" data-label="Submit Application" class="btn btn-success">Submit Application</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Done -->
+      <div id="step3" style="display:none">
+        <div class="card text-center p-4">
+          <div style="font-size: 48px; margin-bottom: 16px;">&#10003;</div>
+          <h5>Application Submitted</h5>
+          <p class="text-muted">Your organisation details and scope request have been sent for admin review. You will be able to start using the API once your account is approved.</p>
+          <a href="dashboard.html" class="btn btn-primary mt-2">Go to Dashboard</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireCompanyAuth();
+
+  const token = getToken('company_token');
+
+  function goToStep(n) {
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = 'none';
+    document.getElementById('step' + n).style.display = 'block';
+
+    // update step bubbles
+    for (let i = 1; i <= 3; i++) {
+      const bubble = document.getElementById('bubble' + i);
+      if (i < n) {
+        bubble.className = 'step-bubble done';
+        bubble.textContent = '✓';
+      } else if (i === n) {
+        bubble.className = 'step-bubble active';
+        bubble.textContent = i;
+      } else {
+        bubble.className = 'step-bubble';
+        bubble.textContent = i;
+      }
+    }
+
+    // update lines between steps
+    if (n > 1) document.getElementById('line1').className = 'step-line done';
+    else document.getElementById('line1').className = 'step-line';
+
+    if (n > 2) document.getElementById('line2').className = 'step-line done';
+    else document.getElementById('line2').className = 'step-line';
+  }
+
+  // step 1 - save company details
+  document.getElementById('detailsForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('detailsBtn');
+    setLoading(btn, true);
+    hideAlert('globalMsg');
+
+    const body = {};
+    if (document.getElementById('company_type').value) body.company_type = document.getElementById('company_type').value;
+    if (document.getElementById('commercial_number').value) body.commercial_number = document.getElementById('commercial_number').value;
+    if (document.getElementById('contact_email').value) body.contact_email = document.getElementById('contact_email').value;
+    if (document.getElementById('contact_phone').value) body.contact_phone = document.getElementById('contact_phone').value;
+    if (document.getElementById('description').value) body.description = document.getElementById('description').value;
+
+    try {
+      await put(API + '/company/profile', body, token);
+      goToStep(2);
+    } catch (err) {
+      showError('globalMsg', err.message);
+    } finally {
+      setLoading(btn, false);
+    }
+  });
+
+  // map each scope value to its justification textarea id
+  const scopeJustFields = {
+    'name:full':            'just_name_full',
+    'profile:basic':        'just_profile_basic',
+    'profile:contact':      'just_profile_contact',
+    'profile:education':    'just_profile_education',
+    'identity:national_id': 'just_identity_national_id',
+    'identity:document':    'just_identity_document'
+  };
+
+  // step 2 - submit scope request
+  document.getElementById('scopesForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('scopesBtn');
+    setLoading(btn, true);
+    hideAlert('globalMsg');
+
+    const checkboxes = document.querySelectorAll('input[name="scope"]:checked');
+    const selectedScopes = [];
+    for (let i = 0; i < checkboxes.length; i++) {
+      selectedScopes.push(checkboxes[i].value);
+    }
+
+    if (selectedScopes.length === 0) {
+      showError('globalMsg', 'Please select at least one scope.');
+      setLoading(btn, false);
+      return;
+    }
+
+    // build one combined justification string from each scope's individual field
+    let combined = '';
+    let missingJustification = false;
+
+    for (let i = 0; i < selectedScopes.length; i++) {
+      const scope = selectedScopes[i];
+      const fieldId = scopeJustFields[scope];
+      const text = document.getElementById(fieldId).value.trim();
+
+      if (!text) {
+        missingJustification = true;
+        break;
+      }
+
+      combined += scope + ': ' + text + '\n';
+    }
+
+    if (missingJustification) {
+      showError('globalMsg', 'Please provide a justification for every scope you selected.');
+      setLoading(btn, false);
+      return;
+    }
+
+    try {
+      await post(API + '/company/request-scopes', {
+        scopes: selectedScopes,
+        justification: combined.trim()
+      }, token);
+      goToStep(3);
+    } catch (err) {
+      showError('globalMsg', err.message);
+    } finally {
+      setLoading(btn, false);
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Company Dashboard - NatID</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Company Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="profile.html" class="nav-link d-inline">Profile & Scopes</a>
+      <a href="api-demo.html" class="nav-link d-inline">API Demo</a>
+      <a href="#" onclick="logoutCompany()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4 id="companyName">Loading...</h4>
+
+  <div id="statusBadge" class="alert mt-3">Loading...</div>
+
+  <div id="approvedSection" style="display:none">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h6>Approved Scopes</h6>
+            <p class="text-muted small">These are the data fields you are allowed to access.</p>
+            <table class="table table-sm">
+              <thead><tr><th>Scope</th></tr></thead>
+              <tbody id="scopesBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h6>API Credentials (OAuth2)</h6>
+            <p class="text-muted small">Use these to get an access token from Hydra.</p>
+            <div class="mb-2">
+              <label class="form-label small">Client ID</label>
+              <input type="text" id="clientId" class="form-control form-control-sm" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">Token URL</label>
+              <input type="text" class="form-control form-control-sm" value="http://localhost:4444/oauth2/token" readonly>
+            </div>
+            <p class="text-muted small">The client secret was shown once at approval time. Contact admin if you need it reset.</p>
+            <a href="api-demo.html" class="btn btn-sm btn-success">Try API Demo</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pendingSection" style="display:none">
+    <div class="card">
+      <div class="card-body">
+        <h6>What happens next?</h6>
+        <ol class="text-muted">
+          <li>An admin will review your company registration.</li>
+          <li>Once approved, you will be able to log in and access the API.</li>
+          <li>You will receive your OAuth2 credentials (client ID and secret) upon approval.</li>
+        </ol>
+        <p class="text-muted small">If you have not yet filled in your company details or requested data scopes, you can do that on the <a href="profile.html">Profile & Scopes</a> page.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireCompanyAuth();
+
+  async function loadDashboard() {
+    const token = getToken('company_token');
+    try {
+      const company = await get(`${API}/company/profile`, token);
+
+      document.getElementById('companyName').textContent = company.name + ' — Dashboard';
+
+      if (company.is_approved) {
+        document.getElementById('statusBadge').className = 'alert alert-success mt-3';
+        document.getElementById('statusBadge').innerHTML = '<strong>Status: Approved</strong> — Your company has been approved. You can now use the API.';
+        document.getElementById('approvedSection').style.display = 'block';
+
+        const scopes = company.approved_scopes
+          ? company.approved_scopes.split(',').map(s => s.trim()).filter(Boolean)
+          : [];
+        document.getElementById('scopesBody').innerHTML = scopes.length
+          ? scopes.map(s => `<tr><td><span class="scope-tag">${s}</span></td></tr>`).join('')
+          : '<tr><td class="text-muted">No scopes approved yet.</td></tr>';
+
+        document.getElementById('clientId').value = company.hydra_client_id || 'N/A';
+      } else {
+        document.getElementById('statusBadge').className = 'alert alert-warning mt-3';
+        document.getElementById('statusBadge').innerHTML = '<strong>Status: Pending Approval</strong> — Your company registration is under review by an admin.';
+        document.getElementById('pendingSection').style.display = 'block';
+      }
+    } catch (err) {
+      document.getElementById('statusBadge').className = 'alert alert-danger mt-3';
+      document.getElementById('statusBadge').textContent = 'Failed to load company data: ' + err.message;
+    }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>
