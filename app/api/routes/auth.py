@@ -40,6 +40,14 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         email=body.email,
         username=body.username,
         hashed_password=hash_password(body.password),
+        first_name=body.first_name,
+        middle_name=body.middle_name,
+        last_name=body.last_name,
+        birth_date=body.birth_date,
+        phone_number=body.phone_number,
+        location=body.location,
+        education=body.education,
+        national_id=body.national_id,
     )
     db.add(user)
     db.commit()

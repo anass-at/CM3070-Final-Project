@@ -132,22 +132,46 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="name:full" id="chk_name_full"></td>
-                      <td><span class="scope-tag">name:full</span></td>
-                      <td class="text-muted small">First, middle, and last name</td>
-                      <td><textarea class="form-control form-control-sm" id="just_name_full" rows="2" placeholder="e.g. Required to verify customer identity during account opening"></textarea></td>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:full_name" id="chk_name_full_name"></td>
+                      <td><span class="scope-tag">name:full_name</span></td>
+                      <td class="text-muted small">Full name combined (first + middle + last)</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_full_name" rows="2" placeholder="e.g. Required to display the customer's complete legal name in contracts"></textarea></td>
                     </tr>
                     <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="profile:basic" id="chk_profile_basic"></td>
-                      <td><span class="scope-tag">profile:basic</span></td>
-                      <td class="text-muted small">Date of birth and location</td>
-                      <td><textarea class="form-control form-control-sm" id="just_profile_basic" rows="2" placeholder="e.g. Needed for age verification as required by regulations"></textarea></td>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:first_name" id="chk_name_first_name"></td>
+                      <td><span class="scope-tag">name:first_name</span></td>
+                      <td class="text-muted small">First name</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_first_name" rows="2" placeholder="e.g. Required to address the customer by name in official correspondence"></textarea></td>
                     </tr>
                     <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="profile:contact" id="chk_profile_contact"></td>
-                      <td><span class="scope-tag">profile:contact</span></td>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:middle_name" id="chk_name_middle_name"></td>
+                      <td><span class="scope-tag">name:middle_name</span></td>
+                      <td class="text-muted small">Middle name</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_middle_name" rows="2" placeholder="e.g. Needed to match the full legal name on official documents"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:last_name" id="chk_name_last_name"></td>
+                      <td><span class="scope-tag">name:last_name</span></td>
+                      <td class="text-muted small">Last name / family name</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_last_name" rows="2" placeholder="e.g. Required for account registration under the customer's legal surname"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="profile:birth_date" id="chk_profile_birth_date"></td>
+                      <td><span class="scope-tag">profile:birth_date</span></td>
+                      <td class="text-muted small">Date of birth</td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_birth_date" rows="2" placeholder="e.g. Needed for age verification as required by regulations"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="profile:location" id="chk_profile_location"></td>
+                      <td><span class="scope-tag">profile:location</span></td>
+                      <td class="text-muted small">Location / city</td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_location" rows="2" placeholder="e.g. Used to determine applicable regional regulations"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="profile:phone" id="chk_profile_phone"></td>
+                      <td><span class="scope-tag">profile:phone</span></td>
                       <td class="text-muted small">Phone number</td>
-                      <td><textarea class="form-control form-control-sm" id="just_profile_contact" rows="2" placeholder="e.g. Used to send OTP verification codes to customers"></textarea></td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_phone" rows="2" placeholder="e.g. Used to send OTP verification codes to customers"></textarea></td>
                     </tr>
                     <tr>
                       <td class="text-center"><input type="checkbox" name="scope" value="profile:education" id="chk_profile_education"></td>
@@ -255,9 +279,13 @@
 
   // map each scope value to its justification textarea id
   const scopeJustFields = {
-    'name:full':            'just_name_full',
-    'profile:basic':        'just_profile_basic',
-    'profile:contact':      'just_profile_contact',
+    'name:full_name':       'just_name_full_name',
+    'name:first_name':      'just_name_first_name',
+    'name:middle_name':     'just_name_middle_name',
+    'name:last_name':       'just_name_last_name',
+    'profile:birth_date':   'just_profile_birth_date',
+    'profile:location':     'just_profile_location',
+    'profile:phone':        'just_profile_phone',
     'profile:education':    'just_profile_education',
     'identity:national_id': 'just_identity_national_id',
     'identity:document':    'just_identity_document'

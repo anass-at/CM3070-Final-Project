@@ -13,6 +13,7 @@
     <span class="navbar-brand fw-bold">NatID - Company Portal</span>
     <div>
       <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="profile.html" class="nav-link d-inline">Profile & Scopes</a>
       <a href="api-demo.html" class="nav-link d-inline">API Demo</a>
       <a href="#" onclick="logoutCompany()" class="nav-link d-inline">Logout</a>
     </div>
@@ -21,74 +22,299 @@
 
 <div class="container mt-4">
   <h4>API Demo</h4>
-  <p class="text-muted">This shows how a company would call the identity API to get user data.</p>
+  <p class="text-muted">This is a live demo. Your real credentials are loaded automatically — click the buttons to run each step.</p>
 
-  <div class="card mb-3">
-    <div class="card-body">
-      <h6>Step 1 — Get a token from Hydra</h6>
-      <p class="text-muted small">The company sends their client ID and secret to Hydra and gets back an access token.</p>
-      <pre style="background:#f8f9fa; padding:12px; border-radius:6px; font-size:0.85rem;">POST http://localhost:4444/oauth2/token
-
-grant_type=client_credentials
-client_id=national-bank-x7k2
-client_secret=cs_a1b2c3d4e5f6
-scope=name:legal</pre>
-      <button class="btn btn-sm btn-outline-success" onclick="document.getElementById('token-box').style.display='block'">Simulate — Get Token</button>
-      <pre id="token-box" style="display:none; background:#e8f5e9; padding:12px; border-radius:6px; font-size:0.85rem; margin-top:10px;">{
-  "access_token": "eyJhbGciOiJSUzI1NiJ9.eyJzY29wZSI6Im5hbWU6bGVnYWwifQ.sig",
-  "token_type": "bearer",
-  "scope": "name:legal"
-}</pre>
-    </div>
+  <div id="notApprovedMsg" style="display:none" class="alert alert-warning mb-3">
+    Your company is not approved yet. Once an admin approves your account you will receive OAuth2 credentials and can use this demo.
   </div>
 
-  <div class="card mb-3">
-    <div class="card-body">
-      <h6>Step 2 — Call the Identity API</h6>
-      <p class="text-muted small">The company uses the token to request a specific user's data.</p>
+  <div id="demoContent" style="display:none">
 
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label class="form-label small">User ID</label>
-          <input type="text" class="form-control form-control-sm" id="user-id" value="1042">
+    <!-- credentials card -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6>Your API Credentials</h6>
+        <p class="text-muted small">Loaded from your account. In a real integration you would keep these stored securely in your backend config.</p>
+        <div class="row g-2">
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold">Client ID</label>
+            <input type="text" id="displayClientId" class="form-control form-control-sm" readonly>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold">Client Secret</label>
+            <div class="input-group input-group-sm">
+              <input type="password" id="displayClientSecret" class="form-control" readonly>
+              <button class="btn btn-outline-secondary" type="button" id="secretToggleBtn" onclick="toggleDemoSecret()">Show</button>
+            </div>
+          </div>
         </div>
-        <div class="col-md-4">
-          <label class="form-label small">Scope to request</label>
-          <select class="form-select form-select-sm" id="scope">
-            <option value="name:legal">name:legal</option>
-            <option value="name:preferred">name:preferred</option>
-            <option value="name:professional">name:professional</option>
-            <option value="name:religious">name:religious</option>
-            <option value="profile:basic">profile:basic</option>
-          </select>
-        </div>
-        <div class="col-md-4 d-flex align-items-end">
-          <button class="btn btn-sm btn-primary" onclick="runApiCall()">Send Request</button>
+        <div class="mt-2">
+          <label class="form-label small fw-semibold">Your Approved Scopes</label>
+          <div id="approvedScopesTags"></div>
+          <div class="form-text">Click a scope tag to add it to the token request below.</div>
         </div>
       </div>
+    </div>
 
-      <div id="result-box" style="display:none">
-        <p class="text-muted small mb-1">Response from API:</p>
-        <pre id="api-result" style="background:#f8f9fa; padding:12px; border-radius:6px; font-size:0.85rem;"></pre>
+    <!-- step 1 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6>Step 1 — Get an access token from Hydra</h6>
+        <p class="text-muted small">Your backend calls Hydra's token endpoint with your credentials and gets back a signed JWT. You then attach this token to every call you make to the Identity API.</p>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Scopes to include in the token</label>
+          <input type="text" id="tokenScopeInput" class="form-control form-control-sm" placeholder="e.g. name:full profile:basic">
+          <div class="form-text">Space-separated. Only your approved scopes will be granted by Hydra.</div>
+        </div>
+
+        <div class="p-3 mb-3" style="background:#f8f9fa; border-radius:6px; font-size:0.8rem; font-family:monospace; border-left:3px solid #0d6efd">
+          POST http://localhost:4444/oauth2/token<br>
+          Content-Type: application/x-www-form-urlencoded<br>
+          <br>
+          grant_type=client_credentials<br>
+          &amp;client_id=<span id="previewClientId" class="text-primary fw-bold">...</span><br>
+          &amp;client_secret=<span class="text-muted">[your secret]</span><br>
+          &amp;scope=<span id="previewScope" class="text-primary fw-bold">...</span>
+        </div>
+
+        <button class="btn btn-sm btn-success" id="getTokenBtn" data-label="Get Token" onclick="doGetToken()">Get Token</button>
+
+        <div id="tokenResultBox" style="display:none; margin-top:12px">
+          <p class="text-muted small mb-1">Response from Hydra:</p>
+          <pre id="tokenResult" style="background:#e8f5e9; padding:12px; border-radius:6px; font-size:0.8rem; white-space:pre-wrap; word-break:break-all;"></pre>
+        </div>
+        <div id="tokenErrorBox" class="alert alert-danger small mt-2" style="display:none"></div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="card-body">
-      <h6>What happens behind the scenes</h6>
-      <ol class="text-muted small">
-        <li>Company sends their credentials to Hydra and gets a token</li>
-        <li>Company calls the platform API with the token and a user ID</li>
-        <li>The API checks with Hydra that the token is valid</li>
-        <li>The API checks what scopes the company is allowed</li>
-        <li>The API returns only the data the company is allowed to see</li>
-      </ol>
+    <!-- step 2 -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6>Step 2 — Call the Identity API</h6>
+        <p class="text-muted small">Use the token from Step 1 to fetch a user's identity data. The platform checks the token with Hydra, then returns only the fields your scopes allow.</p>
+
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">User ID</label>
+            <input type="number" class="form-control form-control-sm" id="userIdInput" placeholder="e.g. 1" min="1">
+          </div>
+        </div>
+
+        <div class="p-3 mb-3" style="background:#f8f9fa; border-radius:6px; font-size:0.8rem; font-family:monospace; border-left:3px solid #198754">
+          GET http://localhost:8000/api/v1/identity/<span id="previewUserId" class="text-success fw-bold">{user_id}</span><br>
+          Authorization: Bearer <span class="text-muted">[token from step 1]</span>
+        </div>
+
+        <button class="btn btn-sm btn-primary" id="sendRequestBtn" data-label="Send Request" onclick="doSendRequest()">Send Request</button>
+
+        <div id="apiResultBox" style="display:none; margin-top:12px">
+          <p class="text-muted small mb-1">Response from Identity API:</p>
+          <pre id="apiResult" style="background:#f8f9fa; padding:12px; border-radius:6px; font-size:0.8rem; white-space:pre-wrap; word-break:break-all;"></pre>
+        </div>
+        <div id="apiErrorBox" class="alert alert-danger small mt-2" style="display:none"></div>
+      </div>
     </div>
+
+    <!-- how it works -->
+    <div class="card">
+      <div class="card-body">
+        <h6>What happens behind the scenes</h6>
+        <ol class="text-muted small mb-0">
+          <li>Your backend sends its client ID and secret to Hydra (OAuth2 server) and receives a signed access token.</li>
+          <li>You include that token in the Authorization header when calling the NatID Identity API.</li>
+          <li>The API contacts Hydra to verify the token is genuine and not expired (token introspection).</li>
+          <li>The API reads which scopes are in the token and filters the user's data accordingly.</li>
+          <li>Every request is logged — admin can see every access your company made.</li>
+        </ol>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<script src="../js/app.js"></script>
 <script src="../js/api.js"></script>
+<script>
+  requireCompanyAuth();
+
+  // holds the token returned by Hydra after step 1
+  var hydraToken = null;
+  var myClientId = '';
+  var myClientSecret = '';
+
+  async function loadPage() {
+    var companyToken = getToken('company_token');
+    try {
+      var company = await get(API + '/company/profile', companyToken);
+
+      if (!company.is_approved || !company.hydra_client_id) {
+        document.getElementById('notApprovedMsg').style.display = 'block';
+        return;
+      }
+
+      myClientId = company.hydra_client_id;
+      myClientSecret = company.hydra_client_secret || '';
+
+      document.getElementById('demoContent').style.display = 'block';
+      document.getElementById('displayClientId').value = myClientId;
+      document.getElementById('displayClientSecret').value = myClientSecret;
+      document.getElementById('previewClientId').textContent = myClientId;
+
+      // build list of approved scopes and pre-fill the scope input
+      var scopeTags = document.getElementById('approvedScopesTags');
+      scopeTags.innerHTML = '';
+      var allScopes = [];
+
+      if (company.approved_scopes) {
+        var parts = company.approved_scopes.split(',');
+        for (var i = 0; i < parts.length; i++) {
+          var s = parts[i].trim();
+          if (s) {
+            allScopes.push(s);
+            scopeTags.innerHTML += '<span class="scope-tag" style="cursor:pointer" onclick="addScope(\'' + s + '\')">' + s + '</span> ';
+          }
+        }
+      }
+
+      var scopeInput = document.getElementById('tokenScopeInput');
+      scopeInput.value = allScopes.join(' ');
+      document.getElementById('previewScope').textContent = allScopes.join(' ') || '...';
+
+    } catch (err) {
+      console.log('Failed to load company profile:', err.message);
+      document.getElementById('notApprovedMsg').style.display = 'block';
+      document.getElementById('notApprovedMsg').textContent = 'Could not load your credentials: ' + err.message;
+    }
+  }
+
+  function addScope(scope) {
+    var input = document.getElementById('tokenScopeInput');
+    var current = input.value.trim();
+    // only add if not already there
+    if (current.indexOf(scope) === -1) {
+      if (current) {
+        input.value = current + ' ' + scope;
+      } else {
+        input.value = scope;
+      }
+    }
+    document.getElementById('previewScope').textContent = input.value;
+  }
+
+  function toggleDemoSecret() {
+    var field = document.getElementById('displayClientSecret');
+    var btn = document.getElementById('secretToggleBtn');
+    if (field.type === 'password') {
+      field.type = 'text';
+      btn.textContent = 'Hide';
+    } else {
+      field.type = 'password';
+      btn.textContent = 'Show';
+    }
+  }
+
+  async function doGetToken() {
+    var btn = document.getElementById('getTokenBtn');
+    var scope = document.getElementById('tokenScopeInput').value.trim();
+
+    document.getElementById('tokenErrorBox').style.display = 'none';
+    document.getElementById('tokenResultBox').style.display = 'none';
+
+    if (!scope) {
+      document.getElementById('tokenErrorBox').style.display = 'block';
+      document.getElementById('tokenErrorBox').textContent = 'Please enter at least one scope.';
+      return;
+    }
+
+    setLoading(btn, true);
+
+    try {
+      var body = 'grant_type=client_credentials';
+      body += '&client_id=' + encodeURIComponent(myClientId);
+      body += '&client_secret=' + encodeURIComponent(myClientSecret);
+      body += '&scope=' + encodeURIComponent(scope);
+
+      var response = await fetch('http://localhost:4444/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body
+      });
+
+      var data = await response.json();
+
+      if (!response.ok) {
+        var errMsg = data.error_description || data.error || 'Hydra returned an error';
+        throw new Error(errMsg);
+      }
+
+      hydraToken = data.access_token;
+
+      document.getElementById('tokenResult').textContent = JSON.stringify(data, null, 2);
+      document.getElementById('tokenResultBox').style.display = 'block';
+
+    } catch (err) {
+      console.log('Token request failed:', err.message);
+      document.getElementById('tokenErrorBox').style.display = 'block';
+      document.getElementById('tokenErrorBox').textContent = 'Failed to get token: ' + err.message;
+    }
+
+    setLoading(btn, false);
+  }
+
+  async function doSendRequest() {
+    var btn = document.getElementById('sendRequestBtn');
+    var userId = document.getElementById('userIdInput').value.trim();
+
+    document.getElementById('apiErrorBox').style.display = 'none';
+    document.getElementById('apiResultBox').style.display = 'none';
+
+    if (!userId) {
+      document.getElementById('apiErrorBox').style.display = 'block';
+      document.getElementById('apiErrorBox').textContent = 'Please enter a user ID.';
+      return;
+    }
+
+    if (!hydraToken) {
+      document.getElementById('apiErrorBox').style.display = 'block';
+      document.getElementById('apiErrorBox').textContent = 'You need to get a token first — complete Step 1 above.';
+      return;
+    }
+
+    setLoading(btn, true);
+
+    try {
+      var response = await fetch(API + '/identity/' + userId, {
+        headers: { 'Authorization': 'Bearer ' + hydraToken }
+      });
+
+      var data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'API returned an error');
+      }
+
+      document.getElementById('apiResult').textContent = JSON.stringify(data, null, 2);
+      document.getElementById('apiResultBox').style.display = 'block';
+
+    } catch (err) {
+      console.log('Identity API call failed:', err.message);
+      document.getElementById('apiErrorBox').style.display = 'block';
+      document.getElementById('apiErrorBox').textContent = 'Request failed: ' + err.message;
+    }
+
+    setLoading(btn, false);
+  }
+
+  // update request preview as user types
+  document.getElementById('tokenScopeInput') && document.getElementById('tokenScopeInput').addEventListener('input', function() {
+    document.getElementById('previewScope').textContent = this.value || '...';
+  });
+
+  document.getElementById('userIdInput') && document.getElementById('userIdInput').addEventListener('input', function() {
+    document.getElementById('previewUserId').textContent = this.value || '{user_id}';
+  });
+
+  loadPage();
+</script>
 </body>
 </html>
