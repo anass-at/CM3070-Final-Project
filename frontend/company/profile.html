@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Company Profile - NatID</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Company Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="profile.html" class="nav-link d-inline">Profile & Scopes</a>
+      <a href="api-demo.html" class="nav-link d-inline">API Demo</a>
+      <a href="#" onclick="logoutCompany()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4>Company Profile & Scope Request</h4>
+  <p class="text-muted">Fill in your organisation details and request the data scopes you need. An admin will review your request before granting access.</p>
+
+  <div id="msg" style="display:none"></div>
+
+  <!-- Step 1: Company details -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5>Step 1 — Organisation Details</h5>
+      <p class="text-muted small">This information helps the admin understand who you are before approving your account.</p>
+
+      <form id="profileForm">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Organisation Type</label>
+            <select id="company_type" class="form-select">
+              <option value="">-- Select type --</option>
+              <option value="bank">Bank</option>
+              <option value="hospital">Hospital</option>
+              <option value="government">Government</option>
+              <option value="telecom">Telecom</option>
+              <option value="insurance">Insurance</option>
+              <option value="education">Education</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Commercial Registration Number</label>
+            <input type="text" id="commercial_number" class="form-control" placeholder="e.g. 1234567890">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Contact Email</label>
+            <input type="email" id="contact_email" class="form-control" placeholder="contact@company.com">
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Contact Phone</label>
+            <input type="text" id="contact_phone" class="form-control" placeholder="+966 5x xxx xxxx">
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea id="description" class="form-control" rows="3" placeholder="Brief description of what your organisation does..."></textarea>
+        </div>
+        <button type="submit" id="profileBtn" data-label="Save Details" class="btn btn-primary">Save Details</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Step 2: Scope request -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5>Step 2 — Request Data Scopes</h5>
+      <p class="text-muted small">Select the user data fields your organisation needs access to, and explain why you need each one. The admin will review this before granting access.</p>
+
+      <form id="scopesForm">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Available Scopes</label>
+          <div class="form-text mb-2">Tick the scopes you need and explain why for each one.</div>
+          <table class="table table-bordered">
+            <thead class="table-light">
+              <tr><th style="width:40px">Request</th><th style="width:160px">Scope</th><th style="width:180px">What it includes</th><th>Why do you need this?</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="name:full" id="chk_name_full"></td>
+                <td><span class="scope-tag">name:full</span></td>
+                <td class="text-muted small">First, middle, and last name</td>
+                <td><textarea class="form-control form-control-sm" id="just_name_full" rows="2" placeholder="e.g. Required to verify customer identity during account opening"></textarea></td>
+              </tr>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="profile:basic" id="chk_profile_basic"></td>
+                <td><span class="scope-tag">profile:basic</span></td>
+                <td class="text-muted small">Date of birth and location</td>
+                <td><textarea class="form-control form-control-sm" id="just_profile_basic" rows="2" placeholder="e.g. Needed for age verification as required by regulations"></textarea></td>
+              </tr>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="profile:contact" id="chk_profile_contact"></td>
+                <td><span class="scope-tag">profile:contact</span></td>
+                <td class="text-muted small">Phone number</td>
+                <td><textarea class="form-control form-control-sm" id="just_profile_contact" rows="2" placeholder="e.g. Used to send OTP verification codes to customers"></textarea></td>
+              </tr>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="profile:education" id="chk_profile_education"></td>
+                <td><span class="scope-tag">profile:education</span></td>
+                <td class="text-muted small">Education background</td>
+                <td><textarea class="form-control form-control-sm" id="just_profile_education" rows="2" placeholder="e.g. Required to validate academic qualifications for job applications"></textarea></td>
+              </tr>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="identity:national_id" id="chk_identity_national_id"></td>
+                <td><span class="scope-tag">identity:national_id</span></td>
+                <td class="text-muted small">National ID number</td>
+                <td><textarea class="form-control form-control-sm" id="just_identity_national_id" rows="2" placeholder="e.g. Mandatory for KYC compliance under AML regulations"></textarea></td>
+              </tr>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="identity:document" id="chk_identity_document"></td>
+                <td><span class="scope-tag">identity:document</span></td>
+                <td class="text-muted small">Uploaded identity document</td>
+                <td><textarea class="form-control form-control-sm" id="just_identity_document" rows="2" placeholder="e.g. Needed to cross-check the document against our records"></textarea></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button type="submit" id="scopesBtn" data-label="Submit Scope Request" class="btn btn-success">Submit Scope Request</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireCompanyAuth();
+
+  const token = getToken('company_token');
+
+  // load current profile data into the form
+  async function loadProfile() {
+    try {
+      const company = await get(API + '/company/profile', token);
+
+      if (company.company_type) {
+        document.getElementById('company_type').value = company.company_type;
+      }
+      document.getElementById('commercial_number').value = company.commercial_number || '';
+      document.getElementById('contact_email').value = company.contact_email || '';
+      document.getElementById('contact_phone').value = company.contact_phone || '';
+      document.getElementById('description').value = company.description || '';
+
+      // tick the previously requested scopes and fill in justifications
+      if (company.requested_scopes && company.requested_scopes.trim() !== '') {
+        const requestedList = company.requested_scopes.split(',');
+        for (let i = 0; i < requestedList.length; i++) {
+          const scope = requestedList[i].trim();
+          const chk = document.getElementById('chk_' + scope.replace(':', '_'));
+          if (chk) chk.checked = true;
+        }
+      }
+
+      // parse the combined justification back into individual fields
+      if (company.scope_justification) {
+        const lines = company.scope_justification.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          const parts = lines[i].split(': ');
+          if (parts.length >= 2) {
+            const scope = parts[0].trim();
+            const text = parts.slice(1).join(': ').trim();
+            const fieldId = 'just_' + scope.replace(':', '_');
+            const field = document.getElementById(fieldId);
+            if (field) field.value = text;
+          }
+        }
+      }
+    } catch (err) {
+      showError('msg', 'Could not load profile: ' + err.message);
+    }
+  }
+
+  // save company details
+  document.getElementById('profileForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('profileBtn');
+    setLoading(btn, true);
+    hideAlert('msg');
+
+    const body = {
+      company_type: document.getElementById('company_type').value || null,
+      commercial_number: document.getElementById('commercial_number').value || null,
+      contact_email: document.getElementById('contact_email').value || null,
+      contact_phone: document.getElementById('contact_phone').value || null,
+      description: document.getElementById('description').value || null
+    };
+
+    // remove null values so we don't overwrite things with null
+    for (const key in body) {
+      if (body[key] === null || body[key] === '') {
+        delete body[key];
+      }
+    }
+
+    try {
+      await put(API + '/company/profile', body, token);
+      showSuccess('msg', 'Organisation details saved.');
+    } catch (err) {
+      showError('msg', err.message);
+    } finally {
+      setLoading(btn, false);
+    }
+  });
+
+  const scopeJustFields = {
+    'name:full':            'just_name_full',
+    'profile:basic':        'just_profile_basic',
+    'profile:contact':      'just_profile_contact',
+    'profile:education':    'just_profile_education',
+    'identity:national_id': 'just_identity_national_id',
+    'identity:document':    'just_identity_document'
+  };
+
+  // submit scope request
+  document.getElementById('scopesForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = document.getElementById('scopesBtn');
+    setLoading(btn, true);
+    hideAlert('msg');
+
+    const checkboxes = document.querySelectorAll('input[name="scope"]:checked');
+    const selectedScopes = [];
+    for (let i = 0; i < checkboxes.length; i++) {
+      selectedScopes.push(checkboxes[i].value);
+    }
+
+    if (selectedScopes.length === 0) {
+      showError('msg', 'Please select at least one scope.');
+      setLoading(btn, false);
+      return;
+    }
+
+    // build combined justification from per-scope fields
+    let combined = '';
+    let missingJustification = false;
+
+    for (let i = 0; i < selectedScopes.length; i++) {
+      const scope = selectedScopes[i];
+      const text = document.getElementById(scopeJustFields[scope]).value.trim();
+      if (!text) {
+        missingJustification = true;
+        break;
+      }
+      combined += scope + ': ' + text + '\n';
+    }
+
+    if (missingJustification) {
+      showError('msg', 'Please provide a justification for every scope you selected.');
+      setLoading(btn, false);
+      return;
+    }
+
+    try {
+      await post(API + '/company/request-scopes', {
+        scopes: selectedScopes,
+        justification: combined.trim()
+      }, token);
+      showSuccess('msg', 'Scope request submitted. The admin will review it shortly.');
+    } catch (err) {
+      showError('msg', err.message);
+    } finally {
+      setLoading(btn, false);
+    }
+  });
+
+  loadProfile();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Users - NatID Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID - Admin Portal</span>
+    <div>
+      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
+      <a href="users.html" class="nav-link d-inline">Users</a>
+      <a href="companies.html" class="nav-link d-inline">Companies</a>
+      <a href="access-logs.html" class="nav-link d-inline">Access Logs</a>
+      <a href="#" onclick="logoutAdmin()" class="nav-link d-inline">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h4>All Users</h4>
+
+  <div class="card">
+    <div class="card-body">
+      <table class="table">
+        <thead>
+          <tr><th>Username</th><th>Email</th><th>Registered</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody id="usersBody"><tr><td colspan="5">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  requireAdminAuth();
+
+  async function loadUsers() {
+    const token = getToken('admin_token');
+    const tbody = document.getElementById('usersBody');
+
+    try {
+      const users = await get(API + '/admin/users', token);
+
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No users yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+
+      for (let i = 0; i < users.length; i++) {
+        const u = users[i];
+
+        // figure out the status badge
+        let statusHtml;
+        if (u.is_verified) {
+          statusHtml = '<span class="status-approved">Verified</span>';
+        } else if (!u.is_active) {
+          statusHtml = '<span class="status-rejected">Rejected</span>';
+        } else {
+          statusHtml = '<span class="status-pending">Pending</span>';
+        }
+
+        // use full name if available, fallback to username
+        let displayName = u.username;
+        if (u.first_name && u.last_name) {
+          displayName = u.first_name + ' ' + u.last_name;
+        } else if (u.first_name) {
+          displayName = u.first_name;
+        }
+
+        const date = new Date(u.created_at).toLocaleDateString();
+        const btnClass = u.is_verified ? 'btn-outline-secondary' : 'btn-primary';
+        const btnLabel = u.is_verified ? 'View' : 'Review';
+
+        tbody.innerHTML += '<tr>' +
+          '<td>' + displayName + '</td>' +
+          '<td class="text-muted small">' + u.email + '</td>' +
+          '<td class="text-muted small">' + date + '</td>' +
+          '<td>' + statusHtml + '</td>' +
+          '<td><a href="user-review.html?id=' + u.id + '" class="btn btn-sm ' + btnClass + '">' + btnLabel + '</a></td>' +
+          '</tr>';
+      }
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-danger">' + err.message + '</td></tr>';
+    }
+  }
+
+  loadUsers();
+</script>
+</body>
+</html>

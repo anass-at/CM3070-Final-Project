@@ -100,6 +100,11 @@ def me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+@router.post("/logout")
+def logout(current_user: User = Depends(get_current_user)):
+    return {"message": "Logged out successfully"}
+
+
 @router.get("/access-logs", response_model=List[AccessLogResponse])
 def my_access_logs(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return (
