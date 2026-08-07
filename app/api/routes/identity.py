@@ -51,17 +51,25 @@ def get_identity(
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="User identity not verified")
 
-    # Build allowed fields from token scopes
-    allowed_fields = []
-    for scope in scopes:
-        allowed_fields.extend(SCOPE_FIELDS.get(scope, []))
-
-    # Return only the fields the company is allowed to see
+    # Build the response — handle computed scopes first, then regular field scopes
     result = {"user_id": user.id}
-    for field in allowed_fields:
-        value = getattr(user, field, None)
-        if value is not None:
-            result[field] = str(value) if isinstance(value, date) else value
+
+    for scope in scopes:
+        if scope == "name:full_name":
+            parts = []
+            if user.first_name:
+                parts.append(user.first_name)
+            if user.middle_name:
+                parts.append(user.middle_name)
+            if user.last_name:
+                parts.append(user.last_name)
+            if parts:
+                result["full_name"] = " ".join(parts)
+        else:
+            for field in SCOPE_FIELDS.get(scope, []):
+                value = getattr(user, field, None)
+                if value is not None:
+                    result[field] = str(value) if isinstance(value, date) else value
 
     # Log the access
     db.add(AccessLog(

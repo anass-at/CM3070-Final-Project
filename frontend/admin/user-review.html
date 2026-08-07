@@ -23,49 +23,26 @@
 
 <div class="container mt-4">
   <a href="users.html" class="btn btn-sm btn-outline-secondary mb-3">← Back to Users</a>
-  <h4>Review User — Fatima Al-Zahra</h4>
+
+  <div id="msg" style="display:none" class="mb-3"></div>
+
+  <h4 id="pageTitle">Loading...</h4>
 
   <div class="row">
     <div class="col-md-7">
       <div class="card mb-3">
         <div class="card-body">
-          <h6>Identity Data Submitted</h6>
-          <table class="table table-sm">
-            <tbody>
-              <tr><td class="text-muted">Legal Name</td><td>Fatima Hassan Al-Zahra <span class="scope-tag">name:legal</span></td></tr>
-              <tr><td class="text-muted">Preferred Name</td><td>Fatima <span class="scope-tag">name:preferred</span></td></tr>
-              <tr><td class="text-muted">Professional Name</td><td>Dr. F. Al-Zahra <span class="scope-tag">name:professional</span></td></tr>
-              <tr><td class="text-muted">Religious Name</td><td>Umm Yusuf <span class="scope-tag">name:religious</span></td></tr>
-              <tr><td class="text-muted">Date of Birth</td><td>22 Jul 1988</td></tr>
-              <tr><td class="text-muted">Nationality</td><td>Saudi Arabian</td></tr>
-              <tr><td class="text-muted">National ID</td><td>2087654321</td></tr>
-            </tbody>
+          <h6>Identity Data</h6>
+          <table class="table table-sm" id="userDataTable">
+            <tbody></tbody>
           </table>
         </div>
       </div>
 
       <div class="card">
         <div class="card-body">
-          <h6>Uploaded Documents</h6>
-          <table class="table table-sm">
-            <thead><tr><th>Document</th><th>Action</th></tr></thead>
-            <tbody>
-              <tr>
-                <td>National ID Card (national_id.pdf)</td>
-                <td>
-                  <button class="btn btn-sm btn-success me-1" onclick="alert('Document accepted')">Accept</button>
-                  <button class="btn btn-sm btn-danger" onclick="alert('Document rejected')">Reject</button>
-                </td>
-              </tr>
-              <tr>
-                <td>Passport (passport.jpg)</td>
-                <td>
-                  <button class="btn btn-sm btn-success me-1" onclick="alert('Document accepted')">Accept</button>
-                  <button class="btn btn-sm btn-danger" onclick="alert('Document rejected')">Reject</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <h6>Uploaded Document</h6>
+          <div id="docInfo" class="text-muted small">Loading...</div>
         </div>
       </div>
     </div>
@@ -74,19 +51,17 @@
       <div class="card">
         <div class="card-body">
           <h6>Decision</h6>
-          <div class="mb-3">
-            <label class="form-label">Notes (optional)</label>
-            <textarea class="form-control" rows="3" placeholder="Add a note..."></textarea>
+          <p class="text-muted small">Review the user's submitted identity data and document above before making a decision.</p>
+
+          <div id="alreadyDecided" style="display:none" class="mb-3"></div>
+
+          <div id="actionButtons">
+            <div class="d-grid gap-2">
+              <button class="btn btn-success" id="verifyBtn" onclick="verifyUser()">✓ Verify User</button>
+              <button class="btn btn-danger" id="rejectBtn" onclick="rejectUser()">✗ Reject</button>
+            </div>
+            <p class="text-muted small mt-3">Verifying this user means their identity is confirmed. Companies with approved scopes will be able to access their data through the API.</p>
           </div>
-          <div class="d-grid gap-2">
-            <button class="btn btn-success" onclick="alert('User verified!'); location.href='users.html'">
-              ✓ Verify User
-            </button>
-            <button class="btn btn-danger" onclick="alert('User rejected'); location.href='users.html'">
-              ✗ Reject
-            </button>
-          </div>
-          <p class="text-muted small mt-3">Verifying this user means their identity is confirmed and companies with approved scopes can access their data through the API.</p>
         </div>
       </div>
     </div>
@@ -94,5 +69,116 @@
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireAdminAuth();
+
+  const token = getToken('admin_token');
+
+  // get the user id from the URL e.g. user-review.html?id=5
+  const params = new URLSearchParams(location.search);
+  const userId = params.get('id');
+
+  if (!userId) {
+    location.href = 'users.html';
+  }
+
+  async function loadUser() {
+    try {
+      const user = await get(API + '/admin/users/' + userId, token);
+
+      // set the page title
+      let name = user.username;
+      if (user.first_name && user.last_name) {
+        name = user.first_name + ' ' + user.last_name;
+      }
+      document.getElementById('pageTitle').textContent = 'Review User — ' + name;
+
+      // fill in identity data table
+      const tbody = document.getElementById('userDataTable').querySelector('tbody');
+      tbody.innerHTML = '';
+
+      function addRow(label, value, scopeTag) {
+        if (!value) return;
+        let cell = value;
+        if (scopeTag) cell += ' <span class="scope-tag">' + scopeTag + '</span>';
+        tbody.innerHTML += '<tr><td class="text-muted" style="width:140px">' + label + '</td><td>' + cell + '</td></tr>';
+      }
+
+      addRow('Email', user.email);
+      addRow('Username', user.username);
+      addRow('First Name', user.first_name, 'name:first_name');
+      addRow('Middle Name', user.middle_name, 'name:middle_name');
+      addRow('Last Name', user.last_name, 'name:last_name');
+      addRow('Date of Birth', user.birth_date, 'profile:birth_date');
+      addRow('Location', user.location, 'profile:location');
+      addRow('Phone', user.phone_number, 'profile:phone');
+      addRow('Education', user.education, 'profile:education');
+      addRow('National ID', user.national_id, 'identity:national_id');
+
+      if (tbody.innerHTML === '') {
+        tbody.innerHTML = '<tr><td colspan="2" class="text-muted">No identity data submitted yet.</td></tr>';
+      }
+
+      // document status
+      const docEl = document.getElementById('docInfo');
+      if (user.document_path) {
+        const filename = user.document_path.split('/').pop();
+        docEl.innerHTML = '&#10003; <strong>' + filename + '</strong> uploaded <span class="scope-tag">identity:document</span>';
+      } else {
+        docEl.textContent = 'No document uploaded.';
+      }
+
+      // show current status if already decided
+      if (user.is_verified) {
+        document.getElementById('alreadyDecided').style.display = 'block';
+        document.getElementById('alreadyDecided').innerHTML = '<div class="alert alert-success">This user is already <strong>verified</strong>.</div>';
+        document.getElementById('verifyBtn').disabled = true;
+      } else if (!user.is_active) {
+        document.getElementById('alreadyDecided').style.display = 'block';
+        document.getElementById('alreadyDecided').innerHTML = '<div class="alert alert-danger">This user has been <strong>rejected</strong>.</div>';
+        document.getElementById('rejectBtn').disabled = true;
+      }
+
+    } catch (err) {
+      showError('msg', 'Could not load user: ' + err.message);
+    }
+  }
+
+  async function verifyUser() {
+    if (!confirm('Verify this user? Their identity will be marked as confirmed.')) return;
+
+    document.getElementById('verifyBtn').disabled = true;
+    document.getElementById('rejectBtn').disabled = true;
+
+    try {
+      await post(API + '/admin/users/' + userId + '/verify', {}, token);
+      showSuccess('msg', 'User verified successfully.');
+      setTimeout(function() { location.href = 'users.html'; }, 1500);
+    } catch (err) {
+      showError('msg', err.message);
+      document.getElementById('verifyBtn').disabled = false;
+      document.getElementById('rejectBtn').disabled = false;
+    }
+  }
+
+  async function rejectUser() {
+    if (!confirm('Reject this user? Their account will be disabled.')) return;
+
+    document.getElementById('verifyBtn').disabled = true;
+    document.getElementById('rejectBtn').disabled = true;
+
+    try {
+      await post(API + '/admin/users/' + userId + '/reject', { reason: 'Rejected by admin' }, token);
+      showSuccess('msg', 'User rejected.');
+      setTimeout(function() { location.href = 'users.html'; }, 1500);
+    } catch (err) {
+      showError('msg', err.message);
+      document.getElementById('verifyBtn').disabled = false;
+      document.getElementById('rejectBtn').disabled = false;
+    }
+  }
+
+  loadUser();
+</script>
 </body>
 </html>
