@@ -26,7 +26,15 @@
 
   <div id="msg" style="display:none" class="mb-3"></div>
 
-  <h4 id="pageTitle">Loading...</h4>
+  <!-- Company header -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div id="logoPlaceholder" style="width:64px;height:64px;border-radius:8px;background:#e9ecef;display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid #dee2e6;flex-shrink:0;">&#127970;</div>
+    <img id="logoImg" src="" alt="Company logo" style="width:64px;height:64px;border-radius:8px;object-fit:cover;border:2px solid #dee2e6;display:none;flex-shrink:0;">
+    <div>
+      <h4 id="pageTitle" class="mb-0">Loading...</h4>
+      <p id="pageSubtitle" class="text-muted small mb-0"></p>
+    </div>
+  </div>
 
   <div class="row">
     <div class="col-md-7">
@@ -38,6 +46,14 @@
           <table class="table table-sm">
             <tbody id="companyDetailsTable"></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Commercial document -->
+      <div class="card mb-3">
+        <div class="card-body">
+          <h6>Commercial Registration Document</h6>
+          <div id="companyDocInfo" class="text-muted small">No document uploaded.</div>
         </div>
       </div>
 
@@ -60,9 +76,14 @@
 
           <div id="actionButtons">
             <p class="text-muted small">Approving will create an OAuth2 client in Hydra with the scopes you ticked. The company will see their client credentials on their dashboard.</p>
-            <div class="d-grid gap-2">
+            <div class="d-grid mb-3">
               <button class="btn btn-success" id="approveBtn" onclick="approveCompany()">✓ Approve Company</button>
-              <button class="btn btn-danger" id="rejectBtn" onclick="rejectCompany()">✗ Reject</button>
+            </div>
+
+            <div id="rejectForm">
+              <label class="form-label small fw-semibold">Rejection Reason</label>
+              <textarea id="rejectReason" class="form-control form-control-sm mb-2" rows="3" placeholder="Explain why this company is being rejected. The company will see this message."></textarea>
+              <button class="btn btn-danger w-100" id="rejectBtn" onclick="rejectCompany()">✗ Reject Company</button>
             </div>
           </div>
         </div>
@@ -89,7 +110,14 @@
     try {
       const company = await get(API + '/admin/companies/' + companyId, token);
 
-      document.getElementById('pageTitle').textContent = 'Review Company — ' + company.name;
+      document.getElementById('pageTitle').textContent = 'Review: ' + company.name;
+      document.getElementById('pageSubtitle').textContent = company.email;
+
+      if (company.logo) {
+        document.getElementById('logoImg').src = 'http://localhost:8000' + company.logo;
+        document.getElementById('logoImg').style.display = 'block';
+        document.getElementById('logoPlaceholder').style.display = 'none';
+      }
 
       // fill in company details table
       const tbody = document.getElementById('companyDetailsTable');
@@ -111,6 +139,21 @@
 
       if (tbody.innerHTML === '') {
         tbody.innerHTML = '<tr><td colspan="2" class="text-muted">No details provided yet.</td></tr>';
+      }
+
+      // commercial document
+      var docEl = document.getElementById('companyDocInfo');
+      if (company.document_path) {
+        var fileUrl = 'http://localhost:8000' + company.document_path;
+        var filename = company.document_path.split('/').pop();
+        var isImage = filename.match(/\.(jpg|jpeg|png|webp)$/i);
+        var preview = '';
+        if (isImage) {
+          preview = '<div class="mt-2"><img src="' + fileUrl + '" alt="Document" style="max-width:100%;max-height:260px;border-radius:6px;border:1px solid #dee2e6;"></div>';
+        } else {
+          preview = '<div class="mt-2"><a href="' + fileUrl + '" target="_blank" class="btn btn-sm btn-outline-secondary">Open PDF</a></div>';
+        }
+        docEl.innerHTML = '<div class="d-flex align-items-center gap-2"><span class="text-success">&#10003;</span><strong>' + filename + '</strong></div>' + preview;
       }
 
       // parse scope justifications - stored as "scope: reason\nscope: reason"
@@ -215,13 +258,18 @@
   }
 
   async function rejectCompany() {
-    if (!confirm('Reject this company? Their account will be disabled.')) return;
+    var reason = document.getElementById('rejectReason').value.trim();
+    if (!reason) {
+      showError('msg', 'Please enter a rejection reason before rejecting.');
+      document.getElementById('rejectReason').focus();
+      return;
+    }
 
     document.getElementById('approveBtn').disabled = true;
     document.getElementById('rejectBtn').disabled = true;
 
     try {
-      await post(API + '/admin/companies/' + companyId + '/reject', { reason: 'Rejected by admin' }, token);
+      await post(API + '/admin/companies/' + companyId + '/reject', { reason: reason }, token);
       showSuccess('msg', 'Company rejected.');
       setTimeout(function() { location.href = 'companies.html'; }, 1500);
     } catch (err) {

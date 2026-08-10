@@ -2,9 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>User Register - NatID</title>
+  <title>Create Account - NatID</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../css/style.css" rel="stylesheet">
+  <style>
+    .step-indicator { display:flex; gap:8px; align-items:center; margin-bottom:24px; }
+    .step-bubble { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; background:#dee2e6; color:#666; flex-shrink:0; }
+    .step-bubble.active { background:#0d6efd; color:white; }
+    .step-bubble.done { background:#198754; color:white; }
+    .step-line { flex:1; height:2px; background:#dee2e6; }
+    .step-line.done { background:#198754; }
+    .avatar-preview { width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #dee2e6; }
+    .avatar-placeholder { width:100px; height:100px; border-radius:50%; background:#f0f0f0; display:flex; align-items:center; justify-content:center; font-size:36px; border:3px solid #dee2e6; }
+  </style>
 </head>
 <body>
 
@@ -17,100 +27,287 @@
 
 <div class="container mt-4">
   <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card p-4">
-        <h4 class="mb-3">Create Account</h4>
+    <div class="col-md-7">
 
-        <div id="msg" style="display:none"></div>
+      <h4 class="mb-1">Create Account</h4>
+      <p class="text-muted small mb-3">Set up your NatID account in 3 quick steps.</p>
 
-        <form id="registerForm">
-          <h6 class="text-muted">Account Info</h6>
-          <div class="mb-2">
-            <label class="form-label">Email</label>
-            <input type="email" id="email" class="form-control" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Username</label>
-            <input type="text" id="username" class="form-control" required>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Password</label>
-            <input type="password" id="password" class="form-control" required>
-          </div>
-
-          <hr>
-          <h6 class="text-muted">Identity Details</h6>
-          <div class="row mb-2">
-            <div class="col">
-              <label class="form-label">First Name</label>
-              <input type="text" id="first_name" class="form-control">
-            </div>
-            <div class="col">
-              <label class="form-label">Last Name</label>
-              <input type="text" id="last_name" class="form-control">
-            </div>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Date of Birth</label>
-            <input type="date" id="birth_date" class="form-control">
-          </div>
-          <div class="mb-2">
-            <label class="form-label">Location</label>
-            <input type="text" id="location" class="form-control" placeholder="e.g. Riyadh, Saudi Arabia">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">National ID <small class="text-muted">(used for verification only, never shared)</small></label>
-            <input type="text" id="national_id" class="form-control">
-          </div>
-
-          <button type="submit" id="submitBtn" data-label="Register" class="btn btn-primary w-100">Register</button>
-        </form>
-
-        <p class="mt-3 text-center">Already have an account? <a href="login.html">Login</a></p>
+      <!-- step indicator -->
+      <div class="step-indicator">
+        <div class="step-bubble active" id="bubble1">1</div>
+        <div class="step-line" id="line1"></div>
+        <div class="step-bubble" id="bubble2">2</div>
+        <div class="step-line" id="line2"></div>
+        <div class="step-bubble" id="bubble3">3</div>
       </div>
+
+      <div id="globalMsg" style="display:none"></div>
+
+      <!-- ── Step 1: Account ── -->
+      <div id="step1">
+        <div class="card p-4">
+          <h5 class="mb-1">Step 1 — Account Info</h5>
+          <p class="text-muted small mb-3">These are your login credentials.</p>
+
+          <form id="accountForm">
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input type="email" id="email" class="form-control" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Username</label>
+              <input type="text" id="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" id="password" class="form-control" required>
+            </div>
+            <button type="submit" id="accountBtn" data-label="Next" class="btn btn-primary w-100">Next</button>
+          </form>
+
+          <p class="mt-3 text-center text-muted small">Already have an account? <a href="login.html">Login</a></p>
+        </div>
+      </div>
+
+      <!-- ── Step 2: Identity Details ── -->
+      <div id="step2" style="display:none">
+        <div class="card p-4">
+          <h5 class="mb-1">Step 2 — Identity Details</h5>
+          <p class="text-muted small mb-3">This information is what companies can request access to. All fields are optional — you can fill them later from your profile.</p>
+
+          <div class="row mb-2">
+            <div class="col-md-4">
+              <label class="form-label small">First Name <span class="scope-tag">name:first_name</span></label>
+              <input type="text" id="first_name" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">Middle Name <span class="scope-tag">name:middle_name</span></label>
+              <input type="text" id="middle_name" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">Last Name <span class="scope-tag">name:last_name</span></label>
+              <input type="text" id="last_name" class="form-control form-control-sm">
+            </div>
+          </div>
+
+          <div class="row mb-2">
+            <div class="col-md-6">
+              <label class="form-label small">Date of Birth <span class="scope-tag">profile:birth_date</span></label>
+              <input type="date" id="birth_date" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small">Location <span class="scope-tag">profile:location</span></label>
+              <input type="text" id="location" class="form-control form-control-sm" placeholder="e.g. Riyadh">
+            </div>
+          </div>
+
+          <div class="row mb-2">
+            <div class="col-md-6">
+              <label class="form-label small">Phone Number <span class="scope-tag">profile:phone</span></label>
+              <input type="text" id="phone_number" class="form-control form-control-sm" placeholder="e.g. +966501234567">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small">Education <span class="scope-tag">profile:education</span></label>
+              <input type="text" id="education" class="form-control form-control-sm" placeholder="e.g. BSc Computer Science">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small">National ID <span class="scope-tag">identity:national_id</span></label>
+            <input type="text" id="national_id" class="form-control form-control-sm">
+          </div>
+
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" onclick="goToStep(1)">Back</button>
+            <button class="btn btn-outline-secondary" id="skipDetailsBtn" onclick="skipDetails()">Skip for now</button>
+            <button class="btn btn-primary ms-auto" id="detailsBtn" data-label="Save & Continue" onclick="saveDetails()">Save & Continue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 3: Profile Photo ── -->
+      <div id="step3" style="display:none">
+        <div class="card p-4">
+          <h5 class="mb-1">Step 3 — Profile Photo</h5>
+          <p class="text-muted small mb-3">Add a photo so admins can recognise you. Optional — you can add one later.</p>
+
+          <div class="text-center mb-3">
+            <div id="avatarPlaceholder" class="avatar-placeholder mx-auto mb-2">&#128100;</div>
+            <img id="avatarPreview" src="" alt="Preview" class="avatar-preview mx-auto mb-2 d-none">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small">Choose a photo (JPEG, PNG, or WebP)</label>
+            <input type="file" id="photoFile" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp">
+          </div>
+
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" onclick="goToStep(2)">Back</button>
+            <button class="btn btn-outline-secondary" onclick="finish()">Skip for now</button>
+            <button class="btn btn-primary ms-auto" id="photoBtn" data-label="Upload & Finish" onclick="uploadPhoto()">Upload & Finish</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
 <script src="../js/api.js"></script>
 <script>
-  document.getElementById('registerForm').addEventListener('submit', async function (e) {
+  // token stored after step 1 registration
+  var authToken = null;
+
+  function goToStep(n) {
+    sessionStorage.setItem('register_step', n);
+
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'none';
+    document.getElementById('step3').style.display = 'none';
+    document.getElementById('step' + n).style.display = 'block';
+
+    for (var i = 1; i <= 3; i++) {
+      var bubble = document.getElementById('bubble' + i);
+      if (i < n) {
+        bubble.className = 'step-bubble done';
+        bubble.textContent = '✓';
+      } else if (i === n) {
+        bubble.className = 'step-bubble active';
+        bubble.textContent = i;
+      } else {
+        bubble.className = 'step-bubble';
+        bubble.textContent = i;
+      }
+    }
+
+    if (n > 1) { document.getElementById('line1').className = 'step-line done'; }
+    else { document.getElementById('line1').className = 'step-line'; }
+    if (n > 2) { document.getElementById('line2').className = 'step-line done'; }
+    else { document.getElementById('line2').className = 'step-line'; }
+  }
+
+  // step 1 — register account
+  document.getElementById('accountForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    const btn = document.getElementById('submitBtn');
+    var btn = document.getElementById('accountBtn');
     setLoading(btn, true);
-    hideAlert('msg');
+    hideAlert('globalMsg');
+
+    var email    = document.getElementById('email').value;
+    var username = document.getElementById('username').value;
+    var password = document.getElementById('password').value;
 
     try {
-      // Step 1: create account
-      await post(`${API}/auth/register`, {
-        email:    document.getElementById('email').value,
-        username: document.getElementById('username').value,
-        password: document.getElementById('password').value
+      await post(API + '/auth/register', { email: email, username: username, password: password });
+
+      var loginData = await post(API + '/auth/login', { email: email, password: password });
+      authToken = loginData.access_token;
+      saveToken('user_token', authToken);
+
+      goToStep(2);
+    } catch (err) {
+      showError('globalMsg', err.message);
+    }
+
+    setLoading(btn, false);
+  });
+
+  // step 2 — save identity details
+  async function saveDetails() {
+    var btn = document.getElementById('detailsBtn');
+    setLoading(btn, true);
+    hideAlert('globalMsg');
+
+    var fields = ['first_name', 'middle_name', 'last_name', 'birth_date', 'location', 'phone_number', 'education', 'national_id'];
+    var body = {};
+    for (var i = 0; i < fields.length; i++) {
+      var val = document.getElementById(fields[i]).value.trim();
+      if (val) {
+        body[fields[i]] = val;
+      }
+    }
+
+    try {
+      if (Object.keys(body).length > 0) {
+        await put(API + '/auth/profile', body, authToken);
+      }
+      goToStep(3);
+    } catch (err) {
+      showError('globalMsg', err.message);
+    }
+
+    setLoading(btn, false);
+  }
+
+  function skipDetails() {
+    goToStep(3);
+  }
+
+  // show image preview when file selected
+  document.getElementById('photoFile').addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      document.getElementById('avatarPreview').src = e.target.result;
+      document.getElementById('avatarPreview').classList.remove('d-none');
+      document.getElementById('avatarPlaceholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // step 3 — upload photo
+  async function uploadPhoto() {
+    var btn = document.getElementById('photoBtn');
+    var file = document.getElementById('photoFile').files[0];
+
+    if (!file) {
+      finish();
+      return;
+    }
+
+    setLoading(btn, true);
+    hideAlert('globalMsg');
+
+    var formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      var response = await fetch(API + '/auth/upload-profile-image', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + authToken },
+        body: formData
       });
 
-      // Step 2: auto-login to get token
-      const loginData = await post(`${API}/auth/login`, {
-        email:    document.getElementById('email').value,
-        password: document.getElementById('password').value
-      });
-      saveToken('user_token', loginData.access_token);
-
-      // Step 3: save identity details if provided
-      const profile = {};
-      ['first_name', 'last_name', 'birth_date', 'location', 'national_id'].forEach(f => {
-        const val = document.getElementById(f).value;
-        if (val) profile[f] = val;
-      });
-      if (Object.keys(profile).length > 0) {
-        await put(`${API}/auth/profile`, profile, loginData.access_token);
+      var data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Upload failed');
       }
 
-      location.href = 'dashboard.html';
+      finish();
     } catch (err) {
-      showError('msg', err.message);
+      console.log('Photo upload failed:', err.message);
+      showError('globalMsg', err.message);
       setLoading(btn, false);
     }
-  });
+  }
+
+  function finish() {
+    sessionStorage.removeItem('register_step');
+    location.href = 'dashboard.html';
+  }
+
+  // restore step on page refresh
+  (function () {
+    var savedStep = parseInt(sessionStorage.getItem('register_step'), 10);
+    if (savedStep && savedStep > 1) {
+      authToken = getToken('user_token');
+      if (authToken) {
+        goToStep(savedStep);
+      }
+    }
+  })();
 </script>
 </body>
 </html>

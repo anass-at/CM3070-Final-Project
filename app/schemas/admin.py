@@ -8,9 +8,16 @@ class AdminUserResponse(BaseModel):
     email: str
     username: str
     first_name: Optional[str] = None
+    middle_name: Optional[str] = None
     last_name: Optional[str] = None
+    birth_date: Optional[date] = None
+    phone_number: Optional[str] = None
+    location: Optional[str] = None
+    education: Optional[str] = None
     national_id: Optional[str] = None
+    profile_image: Optional[str] = None
     document_path: Optional[str] = None
+    rejection_reason: Optional[str] = None
     is_verified: bool
     is_active: bool
     created_at: Optional[datetime] = None
@@ -25,11 +32,13 @@ class AdminCompanyResponse(BaseModel):
     company_type: Optional[str] = None
     commercial_number: Optional[str] = None
     description: Optional[str] = None
+    logo: Optional[str] = None
     document_path: Optional[str] = None
     requested_scopes: Optional[str] = None
     scope_justification: Optional[str] = None
     approved_scopes: Optional[str] = None
     hydra_client_id: Optional[str] = None
+    rejection_reason: Optional[str] = None
     is_approved: bool
     is_active: bool
     created_at: Optional[datetime] = None

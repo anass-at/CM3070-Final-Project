@@ -52,7 +52,9 @@ class UserResponse(BaseModel):
     location: Optional[str] = None
     education: Optional[str] = None
     national_id: Optional[str] = None
+    profile_image: Optional[str] = None
     document_path: Optional[str] = None
+    rejection_reason: Optional[str] = None
     role: str
     is_verified: bool
 

@@ -26,11 +26,11 @@
 
   <div class="card">
     <div class="card-body">
-      <table class="table">
+      <table class="table align-middle">
         <thead>
-          <tr><th>Username</th><th>Email</th><th>Registered</th><th>Status</th><th>Action</th></tr>
+          <tr><th style="width:52px">Photo</th><th>Name</th><th>Email</th><th>Registered</th><th>Status</th><th>Action</th></tr>
         </thead>
-        <tbody id="usersBody"><tr><td colspan="5">Loading...</td></tr></tbody>
+        <tbody id="usersBody"><tr><td colspan="6">Loading...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -48,7 +48,7 @@
       const users = await get(API + '/admin/users', token);
 
       if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">No users yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-muted">No users yet.</td></tr>';
         return;
       }
 
@@ -75,11 +75,20 @@
           displayName = u.first_name;
         }
 
+        // profile photo or placeholder
+        let avatarHtml;
+        if (u.profile_image) {
+          avatarHtml = '<img src="http://localhost:8000' + u.profile_image + '" alt="photo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6;">';
+        } else {
+          avatarHtml = '<div style="width:36px;height:36px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid #dee2e6;">&#128100;</div>';
+        }
+
         const date = new Date(u.created_at).toLocaleDateString();
         const btnClass = u.is_verified ? 'btn-outline-secondary' : 'btn-primary';
         const btnLabel = u.is_verified ? 'View' : 'Review';
 
         tbody.innerHTML += '<tr>' +
+          '<td>' + avatarHtml + '</td>' +
           '<td>' + displayName + '</td>' +
           '<td class="text-muted small">' + u.email + '</td>' +
           '<td class="text-muted small">' + date + '</td>' +
