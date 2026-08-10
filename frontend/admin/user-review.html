@@ -26,7 +26,15 @@
 
   <div id="msg" style="display:none" class="mb-3"></div>
 
-  <h4 id="pageTitle">Loading...</h4>
+  <!-- Identity header -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div id="avatarPlaceholder" style="width:72px;height:72px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;font-size:32px;border:2px solid #dee2e6;flex-shrink:0;">&#128100;</div>
+    <img id="profilePhotoImg" src="" alt="Profile photo" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;flex-shrink:0;display:none;">
+    <div>
+      <h4 id="pageTitle" class="mb-0">Loading...</h4>
+      <p id="pageSubtitle" class="text-muted small mb-0"></p>
+    </div>
+  </div>
 
   <div class="row">
     <div class="col-md-7">
@@ -56,10 +64,16 @@
           <div id="alreadyDecided" style="display:none" class="mb-3"></div>
 
           <div id="actionButtons">
-            <div class="d-grid gap-2">
+            <div class="d-grid mb-3">
               <button class="btn btn-success" id="verifyBtn" onclick="verifyUser()">✓ Verify User</button>
-              <button class="btn btn-danger" id="rejectBtn" onclick="rejectUser()">✗ Reject</button>
             </div>
+
+            <div id="rejectForm">
+              <label class="form-label small fw-semibold">Rejection Reason</label>
+              <textarea id="rejectReason" class="form-control form-control-sm mb-2" rows="3" placeholder="Explain why this user is being rejected. The user will see this message."></textarea>
+              <button class="btn btn-danger w-100" id="rejectBtn" onclick="rejectUser()">✗ Reject User</button>
+            </div>
+
             <p class="text-muted small mt-3">Verifying this user means their identity is confirmed. Companies with approved scopes will be able to access their data through the API.</p>
           </div>
         </div>
@@ -90,8 +104,18 @@
       let name = user.username;
       if (user.first_name && user.last_name) {
         name = user.first_name + ' ' + user.last_name;
+      } else if (user.first_name) {
+        name = user.first_name;
       }
-      document.getElementById('pageTitle').textContent = 'Review User — ' + name;
+      document.getElementById('pageTitle').textContent = 'Review: ' + name;
+      document.getElementById('pageSubtitle').textContent = user.email;
+
+      // show profile photo if uploaded
+      if (user.profile_image) {
+        document.getElementById('profilePhotoImg').src = 'http://localhost:8000' + user.profile_image;
+        document.getElementById('profilePhotoImg').style.display = 'block';
+        document.getElementById('avatarPlaceholder').style.display = 'none';
+      }
 
       // fill in identity data table
       const tbody = document.getElementById('userDataTable').querySelector('tbody');
@@ -120,10 +144,26 @@
       }
 
       // document status
-      const docEl = document.getElementById('docInfo');
+      var docEl = document.getElementById('docInfo');
       if (user.document_path) {
-        const filename = user.document_path.split('/').pop();
-        docEl.innerHTML = '&#10003; <strong>' + filename + '</strong> uploaded <span class="scope-tag">identity:document</span>';
+        var filename = user.document_path.split('/').pop();
+        var fileUrl = 'http://localhost:8000' + user.document_path;
+        var isImage = filename.match(/\.(jpg|jpeg|png|webp)$/i);
+
+        var preview = '';
+        if (isImage) {
+          preview = '<div class="mt-2"><img src="' + fileUrl + '" alt="Document" style="max-width:100%; max-height:300px; border-radius:6px; border:1px solid #dee2e6"></div>';
+        } else {
+          preview = '<div class="mt-2"><a href="' + fileUrl + '" target="_blank" class="btn btn-sm btn-outline-secondary">Open PDF</a></div>';
+        }
+
+        docEl.innerHTML =
+          '<div class="d-flex align-items-center gap-2">' +
+            '<span class="text-success">&#10003;</span>' +
+            '<strong>' + filename + '</strong>' +
+            '<span class="scope-tag">identity:document</span>' +
+          '</div>' +
+          preview;
       } else {
         docEl.textContent = 'No document uploaded.';
       }
@@ -162,13 +202,18 @@
   }
 
   async function rejectUser() {
-    if (!confirm('Reject this user? Their account will be disabled.')) return;
+    var reason = document.getElementById('rejectReason').value.trim();
+    if (!reason) {
+      showError('msg', 'Please enter a rejection reason before rejecting.');
+      document.getElementById('rejectReason').focus();
+      return;
+    }
 
     document.getElementById('verifyBtn').disabled = true;
     document.getElementById('rejectBtn').disabled = true;
 
     try {
-      await post(API + '/admin/users/' + userId + '/reject', { reason: 'Rejected by admin' }, token);
+      await post(API + '/admin/users/' + userId + '/reject', { reason: reason }, token);
       showSuccess('msg', 'User rejected.');
       setTimeout(function() { location.href = 'users.html'; }, 1500);
     } catch (err) {

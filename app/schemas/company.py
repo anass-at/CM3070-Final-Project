@@ -40,9 +40,11 @@ class CompanyResponse(BaseModel):
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
     description: Optional[str] = None
+    logo: Optional[str] = None
     document_path: Optional[str] = None
     requested_scopes: Optional[str] = None
     scope_justification: Optional[str] = None
+    rejection_reason: Optional[str] = None
     is_approved: bool
     is_active: bool
     approved_scopes: str

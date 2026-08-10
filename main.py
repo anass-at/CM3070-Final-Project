@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 
 from app.api.routes import auth
 from app.api.routes import company
@@ -29,6 +31,13 @@ app.include_router(auth.router,     prefix=f"{settings.API_V1_STR}/auth",     ta
 app.include_router(company.router,  prefix=f"{settings.API_V1_STR}/company",  tags=["company"])
 app.include_router(admin.router,    prefix=f"{settings.API_V1_STR}/admin",    tags=["admin"])
 app.include_router(identity.router, prefix=f"{settings.API_V1_STR}/identity", tags=["identity"])
+
+# serve uploaded files at /uploads/...
+os.makedirs("uploads/users", exist_ok=True)
+os.makedirs("uploads/companies", exist_ok=True)
+os.makedirs("uploads/company-logos", exist_ok=True)
+os.makedirs("uploads/profile-images", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/")

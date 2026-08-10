@@ -27,6 +27,21 @@
 
   <div id="msg" style="display:none"></div>
 
+  <!-- Profile photo card -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6>Profile Photo</h6>
+      <div class="d-flex align-items-center gap-3">
+        <div id="photoPrev" style="width:80px; height:80px; border-radius:50%; background:#e9ecef; display:flex; align-items:center; justify-content:center; font-size:32px; border:2px solid #dee2e6; flex-shrink:0;">&#128100;</div>
+        <img id="photoImg" src="" alt="Profile photo" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #dee2e6; display:none;">
+        <div>
+          <input type="file" id="photoFile" class="form-control form-control-sm mb-2" accept="image/jpeg,image/png,image/webp" style="max-width:260px;">
+          <button class="btn btn-sm btn-primary" id="photoBtn" data-label="Upload Photo" onclick="uploadPhoto()">Upload Photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <form id="profileForm">
 
     <div class="card">
@@ -112,40 +127,96 @@
 
   async function loadProfile() {
     try {
-      const user = await get(`${API}/auth/me`, token);
-      document.getElementById('first_name').value  = user.first_name  || '';
-      document.getElementById('middle_name').value = user.middle_name || '';
-      document.getElementById('last_name').value   = user.last_name   || '';
-      document.getElementById('birth_date').value  = user.birth_date  || '';
-      document.getElementById('location').value    = user.location    || '';
+      var user = await get(API + '/auth/me', token);
+      document.getElementById('first_name').value   = user.first_name   || '';
+      document.getElementById('middle_name').value  = user.middle_name  || '';
+      document.getElementById('last_name').value    = user.last_name    || '';
+      document.getElementById('birth_date').value   = user.birth_date   || '';
+      document.getElementById('location').value     = user.location     || '';
       document.getElementById('phone_number').value = user.phone_number || '';
-      document.getElementById('education').value   = user.education   || '';
-      document.getElementById('national_id').value = user.national_id || '';
+      document.getElementById('education').value    = user.education    || '';
+      document.getElementById('national_id').value  = user.national_id  || '';
+
+      // show existing profile photo
+      if (user.profile_image) {
+        document.getElementById('photoImg').src = 'http://localhost:8000' + user.profile_image;
+        document.getElementById('photoImg').style.display = 'block';
+        document.getElementById('photoPrev').style.display = 'none';
+      }
     } catch (err) {
       showError('msg', 'Failed to load profile: ' + err.message);
     }
   }
 
-  document.getElementById('profileForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const btn = document.getElementById('submitBtn');
+  // show preview when file selected
+  document.getElementById('photoFile').addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      document.getElementById('photoImg').src = e.target.result;
+      document.getElementById('photoImg').style.display = 'block';
+      document.getElementById('photoPrev').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  async function uploadPhoto() {
+    var btn = document.getElementById('photoBtn');
+    var file = document.getElementById('photoFile').files[0];
+    if (!file) {
+      showError('msg', 'Please choose a photo first.');
+      return;
+    }
+
     setLoading(btn, true);
     hideAlert('msg');
 
-    const body = {};
-    ['first_name','middle_name','last_name','birth_date','location','phone_number','education','national_id'].forEach(field => {
-      const val = document.getElementById(field).value.trim();
-      if (val) body[field] = val;
-    });
+    var formData = new FormData();
+    formData.append('file', file);
 
     try {
-      await put(`${API}/auth/profile`, body, token);
+      var response = await fetch(API + '/auth/upload-profile-image', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+      var data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Upload failed');
+      }
+      showSuccess('msg', 'Profile photo updated.');
+    } catch (err) {
+      console.log('Photo upload failed:', err.message);
+      showError('msg', err.message);
+    }
+
+    setLoading(btn, false);
+  }
+
+  document.getElementById('profileForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var btn = document.getElementById('submitBtn');
+    setLoading(btn, true);
+    hideAlert('msg');
+
+    var fields = ['first_name', 'middle_name', 'last_name', 'birth_date', 'location', 'phone_number', 'education', 'national_id'];
+    var body = {};
+    for (var i = 0; i < fields.length; i++) {
+      var val = document.getElementById(fields[i]).value.trim();
+      if (val) {
+        body[fields[i]] = val;
+      }
+    }
+
+    try {
+      await put(API + '/auth/profile', body, token);
       showSuccess('msg', 'Profile saved successfully.');
     } catch (err) {
       showError('msg', err.message);
-    } finally {
-      setLoading(btn, false);
     }
+
+    setLoading(btn, false);
   });
 
   loadProfile();

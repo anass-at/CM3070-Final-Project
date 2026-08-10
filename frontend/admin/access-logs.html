@@ -23,17 +23,50 @@
 
 <div class="container mt-4">
   <h4>Access Logs</h4>
-  <p class="text-muted">Every API call made by a company is recorded here for auditing purposes.</p>
+  <p class="text-muted">Every API call a company makes to the Identity API is recorded here for auditing.</p>
+
+  <!-- filter bar -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Filter by Company ID</label>
+          <input type="number" id="filterCompanyId" class="form-control form-control-sm" placeholder="e.g. 2" min="1">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small fw-semibold">Filter by User ID</label>
+          <input type="number" id="filterUserId" class="form-control form-control-sm" placeholder="e.g. 4" min="1">
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+          <button class="btn btn-sm btn-primary" onclick="applyFilter()">Apply Filter</button>
+          <button class="btn btn-sm btn-outline-secondary" onclick="clearFilter()">Show All</button>
+        </div>
+      </div>
+      <div id="filterLabel" class="text-muted small mt-2" style="display:none"></div>
+    </div>
+  </div>
 
   <div class="card">
     <div class="card-body">
-      <table class="table">
-        <thead>
-          <tr><th>#</th><th>Company</th><th>User ID</th><th>Scope</th><th>Endpoint</th><th>Status</th><th>Date & Time</th></tr>
-        </thead>
-        <tbody id="logsBody"><tr><td colspan="7">Loading...</td></tr></tbody>
-      </table>
-      <p class="text-muted small">401 = invalid token. 403 = scope not approved for that company.</p>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Company</th>
+              <th>User ID</th>
+              <th>Scope</th>
+              <th>Endpoint</th>
+              <th>Status</th>
+              <th>Date & Time</th>
+            </tr>
+          </thead>
+          <tbody id="logsBody">
+            <tr><td colspan="7" class="text-muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted small mb-0">401 = invalid token &nbsp;·&nbsp; 403 = scope not approved for that company</p>
     </div>
   </div>
 </div>
@@ -42,31 +75,78 @@
 <script>
   requireAdminAuth();
 
-  async function loadLogs() {
-    const token = getToken('admin_token');
+  var adminToken = getToken('admin_token');
+
+  async function loadLogs(url, label) {
+    var tbody = document.getElementById('logsBody');
+    tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Loading...</td></tr>';
+
+    var filterLabel = document.getElementById('filterLabel');
+    if (label) {
+      filterLabel.style.display = 'block';
+      filterLabel.textContent = 'Showing: ' + label;
+    } else {
+      filterLabel.style.display = 'none';
+    }
+
     try {
-      const logs = await get(`${API}/admin/access-logs`, token);
-      const tbody = document.getElementById('logsBody');
+      var logs = await get(url, adminToken);
+      tbody.innerHTML = '';
+
       if (logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-muted">No access logs yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-muted">No logs found.</td></tr>';
         return;
       }
-      tbody.innerHTML = logs.map((log, i) => `
-        <tr>
-          <td class="text-muted small">${i + 1}</td>
-          <td>${log.company_name}</td>
-          <td class="text-muted small">#${log.user_id}</td>
-          <td><span class="scope-tag">${log.scope_used}</span></td>
-          <td class="text-muted small">${log.endpoint}</td>
-          <td><span class="badge ${log.status_code === 200 ? 'bg-success' : 'bg-danger'}">${log.status_code}</span></td>
-          <td class="text-muted small">${new Date(log.created_at).toLocaleString()}</td>
-        </tr>`).join('');
+
+      for (var i = 0; i < logs.length; i++) {
+        var log = logs[i];
+        var statusClass = log.status_code === 200 ? 'bg-success' : 'bg-danger';
+        var date = new Date(log.created_at).toLocaleString();
+
+        tbody.innerHTML +=
+          '<tr>' +
+            '<td class="text-muted small">' + (i + 1) + '</td>' +
+            '<td>' + log.company_name + '</td>' +
+            '<td class="text-muted small">#' + log.user_id + '</td>' +
+            '<td><span class="scope-tag">' + log.scope_used + '</span></td>' +
+            '<td class="text-muted small">' + log.endpoint + '</td>' +
+            '<td><span class="badge ' + statusClass + '">' + log.status_code + '</span></td>' +
+            '<td class="text-muted small">' + date + '</td>' +
+          '</tr>';
+      }
     } catch (err) {
-      document.getElementById('logsBody').innerHTML = `<tr><td colspan="7" class="text-danger">${err.message}</td></tr>`;
+      console.log('Failed to load access logs:', err.message);
+      tbody.innerHTML = '<tr><td colspan="7" class="text-danger">' + err.message + '</td></tr>';
     }
   }
 
-  loadLogs();
+  function applyFilter() {
+    var companyId = document.getElementById('filterCompanyId').value.trim();
+    var userId = document.getElementById('filterUserId').value.trim();
+
+    if (companyId && userId) {
+      showError('filterLabel', 'Please filter by company or user — not both at the same time.');
+      document.getElementById('filterLabel').style.display = 'block';
+      return;
+    }
+
+    if (companyId) {
+      loadLogs(API + '/admin/access-logs/company/' + companyId, 'Company ID ' + companyId);
+    } else if (userId) {
+      loadLogs(API + '/admin/access-logs/user/' + userId, 'User ID ' + userId);
+    } else {
+      loadLogs(API + '/admin/access-logs', null);
+    }
+  }
+
+  function clearFilter() {
+    document.getElementById('filterCompanyId').value = '';
+    document.getElementById('filterUserId').value = '';
+    loadLogs(API + '/admin/access-logs', null);
+  }
+
+  // load all logs on page load
+  loadLogs(API + '/admin/access-logs', null);
 </script>
 </body>
 </html>

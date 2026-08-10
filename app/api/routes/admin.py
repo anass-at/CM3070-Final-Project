@@ -70,6 +70,7 @@ def reject_user(user_id: int, body: RejectRequest, admin: User = Depends(get_cur
         raise HTTPException(status_code=404, detail="User not found")
     user.is_verified = False
     user.is_active = False
+    user.rejection_reason = body.reason or None
     db.commit()
     db.refresh(user)
     return user
@@ -152,6 +153,7 @@ def reject_company(
     company.is_approved = False
     company.is_active = False
     company.approved_scopes = ""
+    company.rejection_reason = body.reason or None
     db.commit()
     db.refresh(company)
     return company

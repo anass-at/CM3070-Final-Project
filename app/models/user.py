@@ -23,8 +23,11 @@ class User(Base):
     education = Column(String(255), nullable=True)
     national_id = Column(String(100), nullable=True)
 
-    # uploaded document path (stored locally for now)
+    # uploaded files
+    profile_image = Column(String(500), nullable=True)
     document_path = Column(String(500), nullable=True)
+
+    rejection_reason = Column(String(1000), nullable=True)
 
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)

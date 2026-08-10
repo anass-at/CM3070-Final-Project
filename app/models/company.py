@@ -19,7 +19,8 @@ class Company(Base):
     contact_phone = Column(String(20), nullable=True)
     description = Column(Text, nullable=True)
 
-    # uploaded document path
+    # uploaded files
+    logo = Column(String(500), nullable=True)
     document_path = Column(String(500), nullable=True)
 
     # scopes the company requested - comma separated, filled in step 4
@@ -34,6 +35,8 @@ class Company(Base):
     # set when admin approves — used to get OAuth2 tokens from Hydra
     hydra_client_id = Column(String(100), nullable=True)
     hydra_client_secret = Column(String(100), nullable=True)
+
+    rejection_reason = Column(String(1000), nullable=True)
 
     is_approved = Column(Boolean, default=False)  # admin must approve first
     is_active = Column(Boolean, default=True)

@@ -79,7 +79,7 @@
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Organisation Type</label>
-                  <select id="company_type" class="form-select" required>
+                  <select id="company_type" class="form-select" required onchange="toggleOtherType(this)">
                     <option value="">-- Select type --</option>
                     <option value="bank">Bank</option>
                     <option value="hospital">Hospital</option>
@@ -89,25 +89,26 @@
                     <option value="education">Education</option>
                     <option value="other">Other</option>
                   </select>
+                  <input type="text" id="company_type_other" class="form-control mt-2" placeholder="Please specify your organisation type" style="display:none">
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Commercial Registration Number</label>
-                  <input type="text" id="commercial_number" class="form-control" placeholder="e.g. 1234567890">
+                  <input type="text" id="commercial_number" class="form-control" placeholder="e.g. 1234567890" required>
                 </div>
               </div>
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Contact Email</label>
-                  <input type="email" id="contact_email" class="form-control" placeholder="contact@company.com">
+                  <input type="email" id="contact_email" class="form-control" placeholder="contact@company.com" required>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Contact Phone</label>
-                  <input type="text" id="contact_phone" class="form-control" placeholder="+966 5x xxx xxxx">
+                  <input type="text" id="contact_phone" class="form-control" placeholder="+966 5x xxx xxxx" required>
                 </div>
               </div>
               <div class="mb-3">
                 <label class="form-label">Description</label>
-                <textarea id="description" class="form-control" rows="3" placeholder="Briefly describe what your organisation does and why you need access to citizen identity data..."></textarea>
+                <textarea id="description" class="form-control" rows="3" placeholder="Briefly describe what your organisation does and why you need access to citizen identity data..." required></textarea>
               </div>
               <button type="submit" id="detailsBtn" data-label="Save & Continue" class="btn btn-primary">Save & Continue</button>
             </form>
@@ -131,6 +132,18 @@
                     <tr><th style="width:40px">Request</th><th style="width:160px">Scope</th><th style="width:180px">What it includes</th><th>Why do you need this?</th></tr>
                   </thead>
                   <tbody>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="account:email" id="chk_account_email"></td>
+                      <td><span class="scope-tag">account:email</span></td>
+                      <td class="text-muted small">Registered email address</td>
+                      <td><textarea class="form-control form-control-sm" id="just_account_email" rows="2" placeholder="e.g. Required to contact the user or send notifications"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="account:username" id="chk_account_username"></td>
+                      <td><span class="scope-tag">account:username</span></td>
+                      <td class="text-muted small">Username / display name</td>
+                      <td><textarea class="form-control form-control-sm" id="just_account_username" rows="2" placeholder="e.g. Required to identify the user in our system"></textarea></td>
+                    </tr>
                     <tr>
                       <td class="text-center"><input type="checkbox" name="scope" value="name:full_name" id="chk_name_full_name"></td>
                       <td><span class="scope-tag">name:full_name</span></td>
@@ -191,6 +204,12 @@
                       <td class="text-muted small">Uploaded identity document</td>
                       <td><textarea class="form-control form-control-sm" id="just_identity_document" rows="2" placeholder="e.g. Needed to cross-check the document against our records"></textarea></td>
                     </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="profile:photo" id="chk_profile_photo"></td>
+                      <td><span class="scope-tag">profile:photo</span></td>
+                      <td class="text-muted small">Profile photo (URL)</td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_photo" rows="2" placeholder="e.g. Needed to display the user's photo for identity verification"></textarea></td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -223,6 +242,18 @@
   requireCompanyAuth();
 
   const token = getToken('company_token');
+
+  function toggleOtherType(sel) {
+    var otherInput = document.getElementById('company_type_other');
+    if (sel.value === 'other') {
+      otherInput.style.display = 'block';
+      otherInput.required = true;
+    } else {
+      otherInput.style.display = 'none';
+      otherInput.required = false;
+      otherInput.value = '';
+    }
+  }
 
   function goToStep(n) {
     document.getElementById('step1').style.display = 'none';
@@ -261,7 +292,9 @@
     hideAlert('globalMsg');
 
     const body = {};
-    if (document.getElementById('company_type').value) body.company_type = document.getElementById('company_type').value;
+    var typeVal = document.getElementById('company_type').value;
+    if (typeVal === 'other') typeVal = document.getElementById('company_type_other').value.trim();
+    if (typeVal) body.company_type = typeVal;
     if (document.getElementById('commercial_number').value) body.commercial_number = document.getElementById('commercial_number').value;
     if (document.getElementById('contact_email').value) body.contact_email = document.getElementById('contact_email').value;
     if (document.getElementById('contact_phone').value) body.contact_phone = document.getElementById('contact_phone').value;
@@ -279,6 +312,8 @@
 
   // map each scope value to its justification textarea id
   const scopeJustFields = {
+    'account:email':        'just_account_email',
+    'account:username':     'just_account_username',
     'name:full_name':       'just_name_full_name',
     'name:first_name':      'just_name_first_name',
     'name:middle_name':     'just_name_middle_name',
@@ -288,7 +323,8 @@
     'profile:phone':        'just_profile_phone',
     'profile:education':    'just_profile_education',
     'identity:national_id': 'just_identity_national_id',
-    'identity:document':    'just_identity_document'
+    'identity:document':    'just_identity_document',
+    'profile:photo':        'just_profile_photo'
   };
 
   // step 2 - submit scope request
