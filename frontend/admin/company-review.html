@@ -23,42 +23,30 @@
 
 <div class="container mt-4">
   <a href="companies.html" class="btn btn-sm btn-outline-secondary mb-3">← Back to Companies</a>
-  <h4>Review Company — City Hospital</h4>
+
+  <div id="msg" style="display:none" class="mb-3"></div>
+
+  <h4 id="pageTitle">Loading...</h4>
 
   <div class="row">
     <div class="col-md-7">
+
+      <!-- Company details -->
       <div class="card mb-3">
         <div class="card-body">
           <h6>Company Details</h6>
           <table class="table table-sm">
-            <tbody>
-              <tr><td class="text-muted">Name</td><td>City Hospital</td></tr>
-              <tr><td class="text-muted">Sector</td><td>Hospital</td></tr>
-              <tr><td class="text-muted">Registration No.</td><td>CR-9988776655</td></tr>
-              <tr><td class="text-muted">Email</td><td>admin@cityhospital.sa</td></tr>
-              <tr><td class="text-muted">Website</td><td>https://cityhospital.sa</td></tr>
-            </tbody>
+            <tbody id="companyDetailsTable"></tbody>
           </table>
         </div>
       </div>
 
+      <!-- Scope requests -->
       <div class="card">
         <div class="card-body">
-          <h6>Scope Requests — Approve or Reject Each One</h6>
-
-          <div class="border rounded p-3 mb-3">
-            <p><span class="scope-tag">name:legal</span></p>
-            <p class="text-muted small"><strong>Justification:</strong> Required for patient admission — we need to verify legal identity against our medical records system as per Ministry of Health regulation MOH-2023-14.</p>
-            <button class="btn btn-sm btn-success me-2" onclick="this.textContent='✓ Approved'; this.disabled=true;">Approve</button>
-            <button class="btn btn-sm btn-danger" onclick="this.textContent='✗ Rejected'; this.disabled=true;">Reject</button>
-          </div>
-
-          <div class="border rounded p-3">
-            <p><span class="scope-tag">profile:basic</span></p>
-            <p class="text-muted small"><strong>Justification:</strong> Used to display patient name and photo on hospital wristbands and staff dashboards.</p>
-            <button class="btn btn-sm btn-success me-2" onclick="this.textContent='✓ Approved'; this.disabled=true;">Approve</button>
-            <button class="btn btn-sm btn-danger" onclick="this.textContent='✗ Rejected'; this.disabled=true;">Reject</button>
-          </div>
+          <h6>Requested Scopes — Tick the ones you want to approve</h6>
+          <p class="text-muted small">The company submitted a justification for each scope. Read them before deciding which ones to grant.</p>
+          <div id="scopesList">Loading...</div>
         </div>
       </div>
     </div>
@@ -67,19 +55,16 @@
       <div class="card">
         <div class="card-body">
           <h6>Decision</h6>
-          <div class="mb-3">
-            <label class="form-label">Notes (optional)</label>
-            <textarea class="form-control" rows="3" placeholder="Add a note..."></textarea>
+
+          <div id="alreadyDecided" style="display:none" class="mb-3"></div>
+
+          <div id="actionButtons">
+            <p class="text-muted small">Approving will create an OAuth2 client in Hydra with the scopes you ticked. The company will see their client credentials on their dashboard.</p>
+            <div class="d-grid gap-2">
+              <button class="btn btn-success" id="approveBtn" onclick="approveCompany()">✓ Approve Company</button>
+              <button class="btn btn-danger" id="rejectBtn" onclick="rejectCompany()">✗ Reject</button>
+            </div>
           </div>
-          <div class="d-grid gap-2">
-            <button class="btn btn-success" onclick="alert('Company approved! OAuth2 client created in Hydra.'); location.href='companies.html'">
-              ✓ Approve Company
-            </button>
-            <button class="btn btn-danger" onclick="alert('Company rejected'); location.href='companies.html'">
-              ✗ Reject
-            </button>
-          </div>
-          <p class="text-muted small mt-3">Approving this company will create an OAuth2 client in Hydra with the approved scopes. The company will receive a client ID and secret to start using the API.</p>
         </div>
       </div>
     </div>
@@ -87,5 +72,166 @@
 </div>
 
 <script src="../js/api.js"></script>
+<script>
+  requireAdminAuth();
+
+  const token = getToken('admin_token');
+
+  // get company id from URL e.g. company-review.html?id=3
+  const params = new URLSearchParams(location.search);
+  const companyId = params.get('id');
+
+  if (!companyId) {
+    location.href = 'companies.html';
+  }
+
+  async function loadCompany() {
+    try {
+      const company = await get(API + '/admin/companies/' + companyId, token);
+
+      document.getElementById('pageTitle').textContent = 'Review Company — ' + company.name;
+
+      // fill in company details table
+      const tbody = document.getElementById('companyDetailsTable');
+      tbody.innerHTML = '';
+
+      function addRow(label, value) {
+        if (!value) return;
+        tbody.innerHTML += '<tr><td class="text-muted" style="width:160px">' + label + '</td><td>' + value + '</td></tr>';
+      }
+
+      addRow('Name', company.name);
+      addRow('Type', company.company_type);
+      addRow('Registration No.', company.commercial_number);
+      addRow('Email', company.email);
+      addRow('Contact Email', company.contact_email);
+      addRow('Contact Phone', company.contact_phone);
+      addRow('Description', company.description);
+      addRow('Registered', new Date(company.created_at).toLocaleDateString());
+
+      if (tbody.innerHTML === '') {
+        tbody.innerHTML = '<tr><td colspan="2" class="text-muted">No details provided yet.</td></tr>';
+      }
+
+      // parse scope justifications - stored as "scope: reason\nscope: reason"
+      const scopesEl = document.getElementById('scopesList');
+
+      if (!company.requested_scopes || company.requested_scopes.trim() === '') {
+        scopesEl.innerHTML = '<p class="text-muted">No scopes requested yet.</p>';
+      } else {
+        const requestedScopes = company.requested_scopes.split(',');
+        const justifications = {};
+
+        // parse the justification text back into a map
+        if (company.scope_justification) {
+          const lines = company.scope_justification.split('\n');
+          for (let i = 0; i < lines.length; i++) {
+            const colonIndex = lines[i].indexOf(': ');
+            if (colonIndex !== -1) {
+              const scope = lines[i].substring(0, colonIndex).trim();
+              const reason = lines[i].substring(colonIndex + 2).trim();
+              justifications[scope] = reason;
+            }
+          }
+        }
+
+        scopesEl.innerHTML = '';
+
+        for (let i = 0; i < requestedScopes.length; i++) {
+          const scope = requestedScopes[i].trim();
+          if (!scope) continue;
+
+          const reason = justifications[scope] || 'No justification provided.';
+
+          // check if this scope was already approved
+          let alreadyApproved = false;
+          if (company.approved_scopes) {
+            const approvedList = company.approved_scopes.split(',');
+            for (let j = 0; j < approvedList.length; j++) {
+              if (approvedList[j].trim() === scope) {
+                alreadyApproved = true;
+                break;
+              }
+            }
+          }
+
+          scopesEl.innerHTML +=
+            '<div class="border rounded p-3 mb-2">' +
+              '<div class="d-flex align-items-center gap-2 mb-2">' +
+                '<input type="checkbox" class="scope-approve-chk" value="' + scope + '" id="chk_' + scope.replace(':', '_') + '" ' + (alreadyApproved ? 'checked' : '') + '>' +
+                '<label for="chk_' + scope.replace(':', '_') + '" class="mb-0"><span class="scope-tag">' + scope + '</span></label>' +
+              '</div>' +
+              '<p class="text-muted small mb-0"><strong>Justification:</strong> ' + reason + '</p>' +
+            '</div>';
+        }
+      }
+
+      // show current status if already approved or rejected
+      if (company.is_approved) {
+        document.getElementById('alreadyDecided').style.display = 'block';
+        document.getElementById('alreadyDecided').innerHTML = '<div class="alert alert-success">This company is already <strong>approved</strong>. You can re-approve with different scopes if needed.</div>';
+        document.getElementById('rejectBtn').disabled = false;
+      } else if (!company.is_active) {
+        document.getElementById('alreadyDecided').style.display = 'block';
+        document.getElementById('alreadyDecided').innerHTML = '<div class="alert alert-danger">This company has been <strong>rejected</strong>. You can still approve it.</div>';
+        document.getElementById('rejectBtn').disabled = true;
+      }
+
+    } catch (err) {
+      showError('msg', 'Could not load company: ' + err.message);
+    }
+  }
+
+  async function approveCompany() {
+    // collect ticked scopes
+    const checkboxes = document.querySelectorAll('.scope-approve-chk:checked');
+    const approvedScopes = [];
+    for (let i = 0; i < checkboxes.length; i++) {
+      approvedScopes.push(checkboxes[i].value);
+    }
+
+    if (approvedScopes.length === 0) {
+      showError('msg', 'Please tick at least one scope to approve.');
+      return;
+    }
+
+    if (!confirm('Approve this company with ' + approvedScopes.length + ' scope(s)? This will create an OAuth2 client in Hydra.')) return;
+
+    document.getElementById('approveBtn').disabled = true;
+    document.getElementById('rejectBtn').disabled = true;
+
+    try {
+      await post(API + '/admin/companies/' + companyId + '/approve', {
+        scopes: approvedScopes
+      }, token);
+
+      showSuccess('msg', 'Company approved! OAuth2 client created in Hydra. The company can now see their credentials on their dashboard.');
+      setTimeout(function() { location.href = 'companies.html'; }, 2000);
+    } catch (err) {
+      showError('msg', 'Approval failed: ' + err.message);
+      document.getElementById('approveBtn').disabled = false;
+      document.getElementById('rejectBtn').disabled = false;
+    }
+  }
+
+  async function rejectCompany() {
+    if (!confirm('Reject this company? Their account will be disabled.')) return;
+
+    document.getElementById('approveBtn').disabled = true;
+    document.getElementById('rejectBtn').disabled = true;
+
+    try {
+      await post(API + '/admin/companies/' + companyId + '/reject', { reason: 'Rejected by admin' }, token);
+      showSuccess('msg', 'Company rejected.');
+      setTimeout(function() { location.href = 'companies.html'; }, 1500);
+    } catch (err) {
+      showError('msg', 'Rejection failed: ' + err.message);
+      document.getElementById('approveBtn').disabled = false;
+      document.getElementById('rejectBtn').disabled = false;
+    }
+  }
+
+  loadCompany();
+</script>
 </body>
 </html>

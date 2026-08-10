@@ -44,16 +44,22 @@
         <div class="card">
           <div class="card-body">
             <h6>API Credentials (OAuth2)</h6>
-            <p class="text-muted small">Use these to get an access token from Hydra.</p>
+            <p class="text-muted small">Use these to get an access token from Hydra and call the Identity API.</p>
             <div class="mb-2">
               <label class="form-label small">Client ID</label>
               <input type="text" id="clientId" class="form-control form-control-sm" readonly>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small">Client Secret</label>
+              <div class="input-group input-group-sm">
+                <input type="password" id="clientSecret" class="form-control form-control-sm" readonly>
+                <button class="btn btn-outline-secondary btn-sm" type="button" onclick="toggleSecret()">Show</button>
+              </div>
             </div>
             <div class="mb-3">
               <label class="form-label small">Token URL</label>
               <input type="text" class="form-control form-control-sm" value="http://localhost:4444/oauth2/token" readonly>
             </div>
-            <p class="text-muted small">The client secret was shown once at approval time. Contact admin if you need it reset.</p>
             <a href="api-demo.html" class="btn btn-sm btn-success">Try API Demo</a>
           </div>
         </div>
@@ -100,6 +106,7 @@
           : '<tr><td class="text-muted">No scopes approved yet.</td></tr>';
 
         document.getElementById('clientId').value = company.hydra_client_id || 'N/A';
+        document.getElementById('clientSecret').value = company.hydra_client_secret || 'N/A';
       } else {
         document.getElementById('statusBadge').className = 'alert alert-warning mt-3';
         document.getElementById('statusBadge').innerHTML = '<strong>Status: Pending Approval</strong> — Your company registration is under review by an admin.';
@@ -108,6 +115,18 @@
     } catch (err) {
       document.getElementById('statusBadge').className = 'alert alert-danger mt-3';
       document.getElementById('statusBadge').textContent = 'Failed to load company data: ' + err.message;
+    }
+  }
+
+  function toggleSecret() {
+    const field = document.getElementById('clientSecret');
+    const btn = field.nextElementSibling;
+    if (field.type === 'password') {
+      field.type = 'text';
+      btn.textContent = 'Hide';
+    } else {
+      field.type = 'password';
+      btn.textContent = 'Show';
     }
   }
 
