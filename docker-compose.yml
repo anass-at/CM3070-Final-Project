@@ -1,6 +1,6 @@
 services:
 
-  # ── App database (MySQL) ──────────────────────────────────────────
+  # ── App + Hydra database (MySQL) ──────────────────────────────────────────
   db:
     image: mysql:8.0
     container_name: identity_db
@@ -14,41 +14,23 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./docker/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ── Hydra database (Postgres) ─────────────────────────────────────
-  postgres:
-    image: postgres:15-alpine
-    container_name: hydra_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: hydra
-      POSTGRES_USER: hydra
-      POSTGRES_PASSWORD: hydra_pass
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hydra"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ── Run Hydra DB migrations once ─────────────────────────────────
+  # ── Run Hydra DB migrations once ─────────────────────────────────────────
   hydra-migrate:
     image: oryd/hydra:v2.2.0
-    environment:
-      DSN: postgres://hydra:hydra_pass@postgres:5432/hydra?sslmode=disable
-    command: migrate sql --yes $DSN
+    command: migrate sql --yes "mysql://identity_user:identity_pass@tcp(db:3306)/hydra?parseTime=true&multiStatements=true"
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
     restart: on-failure
 
-  # ── Ory Hydra OAuth2 server ───────────────────────────────────────
+  # ── Ory Hydra OAuth2 server ───────────────────────────────────────────────
   hydra:
     image: oryd/hydra:v2.2.0
     container_name: hydra
@@ -57,7 +39,7 @@ services:
       - "4444:4444"   # public  — token endpoint (companies call this)
       - "4445:4445"   # admin   — client management + introspection
     environment:
-      DSN: postgres://hydra:hydra_pass@postgres:5432/hydra?sslmode=disable
+      DSN: mysql://identity_user:identity_pass@tcp(db:3306)/hydra?parseTime=true&multiStatements=true
       SECRETS_SYSTEM: natid-hydra-secret-change-in-production!!
       URLS_SELF_ISSUER: http://localhost:4444/
       LOG_LEVEL: info
@@ -69,4 +51,3 @@ services:
 
 volumes:
   mysql_data:
-  postgres_data:
