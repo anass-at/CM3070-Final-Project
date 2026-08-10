@@ -13,23 +13,75 @@ function clearToken(key) {
   localStorage.removeItem(key);
 }
 
-// redirect to login if no token found
+// redirect to login if no token or token is expired
 function requireUserAuth() {
-  if (!getToken('user_token')) {
-    location.href = 'login.html';
+  if (isTokenExpired(getToken('user_token'))) {
+    handleUnauthorized();
   }
 }
 
 function requireCompanyAuth() {
-  if (!getToken('company_token')) {
-    location.href = 'login.html';
+  if (isTokenExpired(getToken('company_token'))) {
+    handleUnauthorized();
   }
 }
 
 function requireAdminAuth() {
-  if (!getToken('admin_token')) {
-    location.href = 'login.html';
+  if (isTokenExpired(getToken('admin_token'))) {
+    handleUnauthorized();
   }
+}
+
+// decode JWT expiry without a library (payload is plain base64)
+function isTokenExpired(token) {
+  if (!token) return true;
+  try {
+    var payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch (e) {
+    return true;
+  }
+}
+
+// clear all tokens and go to login (relative path works from any portal folder)
+function handleUnauthorized() {
+  clearToken('user_token');
+  clearToken('company_token');
+  clearToken('admin_token');
+  window.location.replace('login.html');
+}
+
+// turn a Pydantic error type into a short human message
+function friendlyValidationMsg(err) {
+  var type = err.type || '';
+  var field = (err.loc || []).filter(function (l) { return l !== 'body'; }).join(', ');
+  var label = field ? field.replace(/_/g, ' ') + ': ' : '';
+
+  if (type === 'missing')           return label + 'This field is required';
+  if (type === 'string_too_short')  return label + 'Too short';
+  if (type === 'string_too_long')   return label + 'Too long';
+  if (type === 'value_error') {
+    if (err.loc && err.loc.indexOf('email') !== -1) return label + 'Enter a valid email address';
+    return label + 'Invalid value';
+  }
+  if (type === 'int_parsing')       return label + 'Must be a number';
+  if (type === 'date_from_datetime_inexact' || type === 'date_parsing') return label + 'Enter a valid date';
+
+  // fallback: strip the verbose Pydantic prefix ("value is not a valid X: <reason>")
+  var msg = err.msg || 'Invalid value';
+  var colonIdx = msg.indexOf(': ');
+  if (colonIdx !== -1) msg = msg.slice(colonIdx + 2);
+  return label + msg;
+}
+
+// extract a readable message from a FastAPI error response
+// detail can be a string (HTTPException) or an array of objects (validation error)
+function extractError(data) {
+  if (!data || !data.detail) return 'Something went wrong';
+  if (Array.isArray(data.detail)) {
+    return friendlyValidationMsg(data.detail[0]);
+  }
+  return data.detail;
 }
 
 // send a POST request to the API
@@ -45,9 +97,14 @@ async function post(url, body, token = null) {
     body: JSON.stringify(body)
   });
 
+  if (response.status === 401) {
+    handleUnauthorized();
+    return;
+  }
+
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.detail || 'Something went wrong');
+    throw new Error(extractError(data));
   }
   return data;
 }
@@ -63,9 +120,14 @@ async function put(url, body, token) {
     body: JSON.stringify(body)
   });
 
+  if (response.status === 401) {
+    handleUnauthorized();
+    return;
+  }
+
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.detail || 'Something went wrong');
+    throw new Error(extractError(data));
   }
   return data;
 }
@@ -76,18 +138,37 @@ async function get(url, token) {
     headers: { 'Authorization': 'Bearer ' + token }
   });
 
+  if (response.status === 401) {
+    handleUnauthorized();
+    return;
+  }
+
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.detail || 'Something went wrong');
+    throw new Error(extractError(data));
   }
   return data;
 }
 
 // show a red error alert
 function showError(id, msg) {
-  const el = document.getElementById(id);
+  var el = document.getElementById(id);
   el.className = 'alert alert-danger';
-  el.textContent = msg;
+  var text;
+  if (!msg) {
+    text = 'Something went wrong';
+  } else if (typeof msg === 'string') {
+    text = msg;
+  } else if (msg.message) {
+    // Error object or object with .message
+    text = msg.message;
+  } else if (Array.isArray(msg)) {
+    // raw Pydantic detail array passed by mistake
+    text = friendlyValidationMsg(msg[0]);
+  } else {
+    text = 'Something went wrong';
+  }
+  el.textContent = text;
   el.style.display = 'block';
 }
 

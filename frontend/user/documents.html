@@ -57,22 +57,36 @@
 
   async function loadDocStatus() {
     try {
-      const user = await get(`${API}/auth/me`, token);
-      const el = document.getElementById('docStatus');
+      var user = await get(API + '/auth/me', token);
+      var el = document.getElementById('docStatus');
+
       if (user.document_path) {
-        const filename = user.document_path.split('/').pop();
-        el.innerHTML = `
-          <div class="d-flex align-items-center gap-2">
-            <span class="status-approved">&#10003; Uploaded</span>
-            <span class="text-muted small">${filename}</span>
-            ${user.is_verified
-              ? '<span class="badge bg-success">Verified by admin</span>'
-              : '<span class="badge bg-warning text-dark">Pending review</span>'}
-          </div>`;
+        var filename = user.document_path.split('/').pop();
+        var fileUrl = 'http://localhost:8000' + user.document_path;
+        var isImage = filename.match(/\.(jpg|jpeg|png|webp)$/i);
+        var statusBadge = user.is_verified
+          ? '<span class="badge bg-success">Verified by admin</span>'
+          : '<span class="badge bg-warning text-dark">Pending review</span>';
+
+        var preview = '';
+        if (isImage) {
+          preview = '<div class="mt-3"><img src="' + fileUrl + '" alt="Document" style="max-width:100%; max-height:280px; border-radius:6px; border:1px solid #dee2e6"></div>';
+        } else {
+          preview = '<div class="mt-2"><a href="' + fileUrl + '" target="_blank" class="btn btn-sm btn-outline-secondary">Open PDF</a></div>';
+        }
+
+        el.innerHTML =
+          '<div class="d-flex align-items-center gap-2">' +
+            '<span class="text-success fw-bold">&#10003; Uploaded</span>' +
+            '<span class="text-muted small">' + filename + '</span>' +
+            statusBadge +
+          '</div>' +
+          preview;
       } else {
         el.innerHTML = '<span class="text-muted">No document uploaded yet.</span>';
       }
     } catch (err) {
+      console.log('Could not load document status:', err.message);
       document.getElementById('docStatus').textContent = 'Could not load document status.';
     }
   }

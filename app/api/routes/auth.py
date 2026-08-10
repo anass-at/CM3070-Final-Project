@@ -15,6 +15,7 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 UPLOAD_DIR = "uploads/users"
+UPLOAD_DIR_IMAGES = "uploads/profile-images"
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
@@ -76,6 +77,10 @@ async def upload_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    allowed = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Only JPEG, PNG, WebP, and PDF files are allowed")
+
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     filename = f"{current_user.id}_{file.filename}"
@@ -85,7 +90,33 @@ async def upload_document(
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    current_user.document_path = file_path
+    # store as a URL path so the frontend can fetch it directly
+    current_user.document_path = f"/uploads/users/{filename}"
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.post("/upload-profile-image", response_model=UserResponse)
+async def upload_profile_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    allowed = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Only JPEG, PNG, and WebP images are allowed")
+
+    os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)
+
+    filename = f"{current_user.id}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR_IMAGES, filename)
+
+    contents = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    current_user.profile_image = f"/uploads/profile-images/{filename}"
     db.commit()
     db.refresh(current_user)
     return current_user

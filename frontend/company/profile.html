@@ -26,6 +26,36 @@
 
   <div id="msg" style="display:none"></div>
 
+  <!-- Logo upload card -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h6>Company Logo</h6>
+      <div class="d-flex align-items-center gap-3">
+        <div id="logoPlaceholder" style="width:72px;height:72px;border-radius:8px;background:#e9ecef;display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid #dee2e6;flex-shrink:0;">&#127970;</div>
+        <img id="logoImg" src="" alt="Company logo" style="width:72px;height:72px;border-radius:8px;object-fit:cover;border:2px solid #dee2e6;display:none;flex-shrink:0;">
+        <div>
+          <input type="file" id="logoFile" class="form-control form-control-sm mb-2" accept="image/jpeg,image/png,image/webp" style="max-width:260px;">
+          <button class="btn btn-sm btn-primary" id="logoBtn" data-label="Upload Logo" onclick="uploadLogo()">Upload Logo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commercial document upload card -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h6>Commercial Registration Document</h6>
+      <p class="text-muted small">Upload your company's commercial registration certificate or trade license. Accepted: JPEG, PNG, WebP, PDF.</p>
+
+      <div id="docPreview" style="display:none" class="mb-3"></div>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <input type="file" id="docFile" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp,application/pdf" style="max-width:280px;">
+        <button class="btn btn-sm btn-primary" id="docBtn" data-label="Upload Document" onclick="uploadDoc()">Upload Document</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Step 1: Company details -->
   <div class="card mb-4">
     <div class="card-body">
@@ -36,7 +66,7 @@
         <div class="row">
           <div class="col-md-6 mb-3">
             <label class="form-label">Organisation Type</label>
-            <select id="company_type" class="form-select">
+            <select id="company_type" class="form-select" onchange="toggleOtherType(this)">
               <option value="">-- Select type --</option>
               <option value="bank">Bank</option>
               <option value="hospital">Hospital</option>
@@ -46,6 +76,7 @@
               <option value="education">Education</option>
               <option value="other">Other</option>
             </select>
+            <input type="text" id="company_type_other" class="form-control mt-2" placeholder="Please specify your organisation type" style="display:none">
           </div>
           <div class="col-md-6 mb-3">
             <label class="form-label">Commercial Registration Number</label>
@@ -86,6 +117,18 @@
               <tr><th style="width:40px">Request</th><th style="width:160px">Scope</th><th style="width:180px">What it includes</th><th>Why do you need this?</th></tr>
             </thead>
             <tbody>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="account:email" id="chk_account_email"></td>
+                <td><span class="scope-tag">account:email</span></td>
+                <td class="text-muted small">Registered email address</td>
+                <td><textarea class="form-control form-control-sm" id="just_account_email" rows="2" placeholder="e.g. Required to contact the user or send notifications"></textarea></td>
+              </tr>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="account:username" id="chk_account_username"></td>
+                <td><span class="scope-tag">account:username</span></td>
+                <td class="text-muted small">Username / display name</td>
+                <td><textarea class="form-control form-control-sm" id="just_account_username" rows="2" placeholder="e.g. Required to identify the user in our system"></textarea></td>
+              </tr>
               <tr>
                 <td class="text-center"><input type="checkbox" name="scope" value="name:full_name" id="chk_name_full_name"></td>
                 <td><span class="scope-tag">name:full_name</span></td>
@@ -146,6 +189,12 @@
                 <td class="text-muted small">Uploaded identity document</td>
                 <td><textarea class="form-control form-control-sm" id="just_identity_document" rows="2" placeholder="e.g. Needed to cross-check the document against our records"></textarea></td>
               </tr>
+              <tr>
+                <td class="text-center"><input type="checkbox" name="scope" value="profile:photo" id="chk_profile_photo"></td>
+                <td><span class="scope-tag">profile:photo</span></td>
+                <td class="text-muted small">Profile photo (URL)</td>
+                <td><textarea class="form-control form-control-sm" id="just_profile_photo" rows="2" placeholder="e.g. Needed to display the user's photo for identity verification"></textarea></td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -162,13 +211,129 @@
 
   const token = getToken('company_token');
 
+  function toggleOtherType(sel) {
+    var otherInput = document.getElementById('company_type_other');
+    if (sel.value === 'other') {
+      otherInput.style.display = 'block';
+      otherInput.required = true;
+    } else {
+      otherInput.style.display = 'none';
+      otherInput.required = false;
+      otherInput.value = '';
+    }
+  }
+
+  // logo: show live preview when file chosen
+  document.getElementById('logoFile').addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      document.getElementById('logoImg').src = e.target.result;
+      document.getElementById('logoImg').style.display = 'block';
+      document.getElementById('logoPlaceholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  async function uploadDoc() {
+    var btn = document.getElementById('docBtn');
+    var file = document.getElementById('docFile').files[0];
+    if (!file) {
+      showError('msg', 'Please choose a file first.');
+      return;
+    }
+    setLoading(btn, true);
+    hideAlert('msg');
+    var formData = new FormData();
+    formData.append('file', file);
+    try {
+      var response = await fetch(API + '/company/upload-document', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+      var data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Upload failed');
+      showDocPreview(data.document_path);
+      showSuccess('msg', 'Document uploaded successfully.');
+    } catch (err) {
+      console.log('Document upload failed:', err.message);
+      showError('msg', err.message);
+    }
+    setLoading(btn, false);
+  }
+
+  function showDocPreview(docPath) {
+    if (!docPath) return;
+    var el = document.getElementById('docPreview');
+    var fileUrl = 'http://localhost:8000' + docPath;
+    var filename = docPath.split('/').pop();
+    var isImage = filename.match(/\.(jpg|jpeg|png|webp)$/i);
+    if (isImage) {
+      el.innerHTML = '<img src="' + fileUrl + '" alt="Document" style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid #dee2e6;">';
+    } else {
+      el.innerHTML = '<div class="d-flex align-items-center gap-2"><span class="text-success">&#10003;</span><strong>' + filename + '</strong><a href="' + fileUrl + '" target="_blank" class="btn btn-sm btn-outline-secondary">Open PDF</a></div>';
+    }
+    el.style.display = 'block';
+  }
+
+  async function uploadLogo() {
+    var btn = document.getElementById('logoBtn');
+    var file = document.getElementById('logoFile').files[0];
+    if (!file) {
+      showError('msg', 'Please choose an image first.');
+      return;
+    }
+    setLoading(btn, true);
+    hideAlert('msg');
+    var formData = new FormData();
+    formData.append('file', file);
+    try {
+      var response = await fetch(API + '/company/upload-logo', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+      var data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Upload failed');
+      showSuccess('msg', 'Logo uploaded successfully.');
+    } catch (err) {
+      console.log('Logo upload failed:', err.message);
+      showError('msg', err.message);
+    }
+    setLoading(btn, false);
+  }
+
   // load current profile data into the form
   async function loadProfile() {
     try {
       const company = await get(API + '/company/profile', token);
 
+      // show existing logo
+      if (company.logo) {
+        document.getElementById('logoImg').src = 'http://localhost:8000' + company.logo;
+        document.getElementById('logoImg').style.display = 'block';
+        document.getElementById('logoPlaceholder').style.display = 'none';
+      }
+
+      // show existing commercial document
+      if (company.document_path) {
+        showDocPreview(company.document_path);
+      }
+
       if (company.company_type) {
-        document.getElementById('company_type').value = company.company_type;
+        var knownTypes = ['bank','hospital','government','telecom','insurance','education','other'];
+        var sel = document.getElementById('company_type');
+        if (knownTypes.indexOf(company.company_type) !== -1) {
+          sel.value = company.company_type;
+          if (company.company_type === 'other') toggleOtherType(sel);
+        } else {
+          // custom type stored in DB — show as "Other" + populate the text field
+          sel.value = 'other';
+          toggleOtherType(sel);
+          document.getElementById('company_type_other').value = company.company_type;
+        }
       }
       document.getElementById('commercial_number').value = company.commercial_number || '';
       document.getElementById('contact_email').value = company.contact_email || '';
@@ -211,8 +376,10 @@
     setLoading(btn, true);
     hideAlert('msg');
 
+    var typeVal = document.getElementById('company_type').value;
+    if (typeVal === 'other') typeVal = document.getElementById('company_type_other').value.trim();
     const body = {
-      company_type: document.getElementById('company_type').value || null,
+      company_type: typeVal || null,
       commercial_number: document.getElementById('commercial_number').value || null,
       contact_email: document.getElementById('contact_email').value || null,
       contact_phone: document.getElementById('contact_phone').value || null,
@@ -237,6 +404,8 @@
   });
 
   const scopeJustFields = {
+    'account:email':        'just_account_email',
+    'account:username':     'just_account_username',
     'name:full_name':       'just_name_full_name',
     'name:first_name':      'just_name_first_name',
     'name:middle_name':     'just_name_middle_name',
@@ -246,7 +415,8 @@
     'profile:phone':        'just_profile_phone',
     'profile:education':    'just_profile_education',
     'identity:national_id': 'just_identity_national_id',
-    'identity:document':    'just_identity_document'
+    'identity:document':    'just_identity_document',
+    'profile:photo':        'just_profile_photo'
   };
 
   // submit scope request

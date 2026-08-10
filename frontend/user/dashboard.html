@@ -5,6 +5,10 @@
   <title>Dashboard - NatID</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../css/style.css" rel="stylesheet">
+  <style>
+    .avatar { width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid #dee2e6; }
+    .avatar-placeholder { width:56px; height:56px; border-radius:50%; background:#e9ecef; display:flex; align-items:center; justify-content:center; font-size:24px; border:2px solid #dee2e6; flex-shrink:0; }
+  </style>
 </head>
 <body>
 
@@ -22,17 +26,25 @@
 </nav>
 
 <div class="container mt-4">
-  <h4>Welcome, <span id="welcomeName">...</span></h4>
 
-  <!-- Status -->
-  <div id="statusBadge" class="alert alert-warning mt-3">Loading...</div>
+  <!-- welcome row with avatar -->
+  <div class="d-flex align-items-center gap-3 mb-3">
+    <div id="avatarPlaceholder" class="avatar-placeholder">&#128100;</div>
+    <img id="avatarImg" src="" alt="Profile" class="avatar d-none">
+    <div>
+      <h4 class="mb-0">Welcome, <span id="welcomeName">...</span></h4>
+      <p class="text-muted small mb-0" id="welcomeEmail"></p>
+    </div>
+  </div>
 
-  <div class="row">
+  <div id="statusBadge" class="alert alert-warning mt-2">Loading...</div>
+
+  <div class="row mt-3">
     <div class="col-md-6">
       <div class="card">
         <div class="card-body">
           <h5>Profile Completion</h5>
-          <ul id="profileList"><li>Loading...</li></ul>
+          <ul id="profileList" class="mb-2"><li>Loading...</li></ul>
           <a href="profile.html" class="btn btn-sm btn-outline-primary">Edit Profile</a>
         </div>
       </div>
@@ -58,43 +70,81 @@
   requireUserAuth();
 
   async function loadDashboard() {
-    const token = getToken('user_token');
-    try {
-      const user = await get(`${API}/auth/me`, token);
-      const name = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username;
-      document.getElementById('welcomeName').textContent = name;
+    var token = getToken('user_token');
 
-      if (user.is_verified) {
-        document.getElementById('statusBadge').className = 'alert alert-success mt-3';
-        document.getElementById('statusBadge').innerHTML = '<strong>Status: Verified</strong> — Your identity has been verified.';
-      } else {
-        document.getElementById('statusBadge').className = 'alert alert-warning mt-3';
-        document.getElementById('statusBadge').innerHTML = '<strong>Status: Pending Verification</strong> — Your documents are waiting for admin review.';
+    try {
+      var user = await get(API + '/auth/me', token);
+
+      // name
+      var name = user.username;
+      if (user.first_name && user.last_name) {
+        name = user.first_name + ' ' + user.last_name;
+      } else if (user.first_name) {
+        name = user.first_name;
+      }
+      document.getElementById('welcomeName').textContent = name;
+      document.getElementById('welcomeEmail').textContent = user.email;
+
+      // profile image
+      if (user.profile_image) {
+        document.getElementById('avatarImg').src = 'http://localhost:8000' + user.profile_image;
+        document.getElementById('avatarImg').classList.remove('d-none');
+        document.getElementById('avatarPlaceholder').style.display = 'none';
       }
 
-      const profileItems = [
-        { done: true, label: 'Email and account created' },
-        { done: !!(user.first_name && user.last_name), label: 'Legal name added', link: 'profile.html' },
-        { done: !!user.national_id, label: 'National ID added', link: 'profile.html' },
-        { done: !!user.phone_number, label: 'Phone number added', link: 'profile.html' },
-        { done: !!user.document_path, label: 'Document uploaded', link: 'documents.html' },
+      // status badge
+      if (user.is_verified) {
+        document.getElementById('statusBadge').className = 'alert alert-success mt-2';
+        document.getElementById('statusBadge').innerHTML = '<strong>Status: Verified</strong> — Your identity has been confirmed by an admin.';
+      } else if (!user.is_active) {
+        var reasonText = user.rejection_reason ? '<br><span class="small">Reason: ' + user.rejection_reason + '</span>' : '';
+        document.getElementById('statusBadge').className = 'alert alert-danger mt-2';
+        document.getElementById('statusBadge').innerHTML = '<strong>Status: Rejected</strong> — Your identity verification was rejected by an admin.' + reasonText;
+      } else {
+        document.getElementById('statusBadge').className = 'alert alert-warning mt-2';
+        document.getElementById('statusBadge').innerHTML = '<strong>Status: Pending Verification</strong> — Submit your identity details and document so an admin can verify you.';
+      }
+
+      // profile checklist
+      var checks = [
+        { done: true,                              label: 'Account created' },
+        { done: !!(user.first_name),               label: 'First name added',    link: 'profile.html' },
+        { done: !!(user.last_name),                label: 'Last name added',     link: 'profile.html' },
+        { done: !!(user.national_id),              label: 'National ID added',   link: 'profile.html' },
+        { done: !!(user.phone_number),             label: 'Phone number added',  link: 'profile.html' },
+        { done: !!(user.document_path),            label: 'Document uploaded',   link: 'documents.html' },
+        { done: !!(user.profile_image),            label: 'Profile photo added', link: 'profile.html' },
       ];
-      document.getElementById('profileList').innerHTML = profileItems.map(item =>
-        `<li>${item.done ? '&#10003;' : '&#10007;'} ${item.label}${!item.done && item.link ? ` — <a href="${item.link}">add it</a>` : ''}</li>`
-      ).join('');
+
+      var list = document.getElementById('profileList');
+      list.innerHTML = '';
+      for (var i = 0; i < checks.length; i++) {
+        var c = checks[i];
+        var icon = c.done ? '&#10003;' : '&#10007;';
+        var linkPart = (!c.done && c.link) ? ' — <a href="' + c.link + '">add it</a>' : '';
+        list.innerHTML += '<li>' + icon + ' ' + c.label + linkPart + '</li>';
+      }
+
     } catch (err) {
-      console.error('Failed to load user data:', err);
+      console.log('Failed to load user data:', err.message);
     }
 
+    // access logs
     try {
-      const logs = await get(`${API}/auth/access-logs`, token);
-      const tbody = document.getElementById('accessLogBody');
+      var token2 = getToken('user_token');
+      var logs = await get(API + '/auth/access-logs', token2);
+      var tbody = document.getElementById('accessLogBody');
+      tbody.innerHTML = '';
+
       if (logs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="text-muted">No access yet</td></tr>';
       } else {
-        tbody.innerHTML = logs.slice(0, 3).map(log =>
-          `<tr><td>${log.company_name}</td><td><span class="scope-tag">${log.scope_used}</span></td><td>${new Date(log.created_at).toLocaleDateString()}</td></tr>`
-        ).join('');
+        var max = logs.length > 3 ? 3 : logs.length;
+        for (var j = 0; j < max; j++) {
+          var log = logs[j];
+          var date = new Date(log.created_at).toLocaleDateString();
+          tbody.innerHTML += '<tr><td>' + log.company_name + '</td><td><span class="scope-tag">' + log.scope_used + '</span></td><td>' + date + '</td></tr>';
+        }
       }
     } catch (err) {
       document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="3" class="text-muted">Could not load logs</td></tr>';

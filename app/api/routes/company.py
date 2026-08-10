@@ -14,6 +14,7 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/company/login")
 
 UPLOAD_DIR = "uploads/companies"
+UPLOAD_DIR_LOGOS = "uploads/company-logos"
 
 
 def get_current_company(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Company:
@@ -77,7 +78,32 @@ async def upload_document(
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    company.document_path = file_path
+    company.document_path = f"/uploads/companies/{filename}"
+    db.commit()
+    db.refresh(company)
+    return company
+
+
+@router.post("/upload-logo", response_model=CompanyResponse)
+async def upload_logo(
+    file: UploadFile = File(...),
+    company: Company = Depends(get_current_company),
+    db: Session = Depends(get_db),
+):
+    allowed = {"image/jpeg", "image/png", "image/webp"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Only JPEG, PNG, and WebP images are allowed")
+
+    os.makedirs(UPLOAD_DIR_LOGOS, exist_ok=True)
+
+    filename = f"{company.id}_{file.filename}"
+    file_path = os.path.join(UPLOAD_DIR_LOGOS, filename)
+
+    contents = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    company.logo = f"/uploads/company-logos/{filename}"
     db.commit()
     db.refresh(company)
     return company
