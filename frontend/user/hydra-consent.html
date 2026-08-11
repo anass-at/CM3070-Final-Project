@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Authorise Access - NatID</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="container">
+    <span class="navbar-brand fw-bold">NatID</span>
+  </div>
+</nav>
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card p-4">
+
+        <div class="text-center mb-3">
+          <div style="font-size:40px;">🛡️</div>
+          <h5 class="mt-2 mb-1">Authorise Access</h5>
+          <p class="text-muted small mb-0">
+            <strong id="clientName">An application</strong> is requesting access to your NatID identity data.
+          </p>
+        </div>
+
+        <div id="msg" style="display:none" class="mb-3"></div>
+        <div id="loading" class="text-center py-3 text-muted">Loading request details...</div>
+
+        <div id="consentContent" style="display:none">
+          <p class="text-muted small">Review the information below before deciding. You can untick scopes you do not want to share.</p>
+
+          <div class="card bg-light mb-3">
+            <div class="card-body py-2">
+              <p class="mb-1 small fw-semibold">Requesting application:</p>
+              <p id="clientNameDetail" class="mb-0"></p>
+              <p class="mb-1 mt-2 small fw-semibold">Signed in as:</p>
+              <p id="subjectDetail" class="mb-0 text-muted small"></p>
+            </div>
+          </div>
+
+          <p class="fw-semibold small mb-2">Requested data fields:</p>
+          <div id="scopesList" class="mb-3"></div>
+
+          <div class="d-grid gap-2">
+            <button class="btn btn-success" id="allowBtn" onclick="allow()">Allow Access</button>
+            <button class="btn btn-outline-danger" onclick="deny()">Deny</button>
+          </div>
+        </div>
+
+      </div>
+
+      <p class="text-muted small text-center mt-3">
+        NatID will log this authorisation. You can see all company access in your <a href="access-log.html">Access Log</a>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="../js/api.js"></script>
+<script>
+  var challenge = new URLSearchParams(location.search).get('consent_challenge');
+  var requestedScopes = [];
+
+  // human-readable scope descriptions
+  var scopeLabels = {
+    'account:email':        'Your registered email address',
+    'account:username':     'Your username',
+    'name:full_name':       'Your full name (first + middle + last)',
+    'name:first_name':      'Your first name',
+    'name:middle_name':     'Your middle name',
+    'name:last_name':       'Your last name',
+    'profile:birth_date':   'Your date of birth',
+    'profile:location':     'Your location / city',
+    'profile:phone':        'Your phone number',
+    'profile:education':    'Your education background',
+    'profile:photo':        'Your profile photo',
+    'identity:national_id': 'Your national ID number',
+    'identity:document':    'Your uploaded identity document',
+  };
+
+  if (!challenge) {
+    document.getElementById('loading').style.display = 'none';
+    showError('msg', 'Missing consent challenge. This page should be opened by an OAuth2 flow.');
+  } else {
+    fetch(API + '/hydra/consent?consent_challenge=' + encodeURIComponent(challenge))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('consentContent').style.display = 'block';
+
+        var clientName = data.client_name || 'Unknown application';
+        document.getElementById('clientName').textContent = clientName;
+        document.getElementById('clientNameDetail').textContent = clientName;
+        document.getElementById('subjectDetail').textContent = 'National ID: ' + (data.subject || '—');
+
+        requestedScopes = data.requested_scope || [];
+
+        var scopesEl = document.getElementById('scopesList');
+        if (requestedScopes.length === 0) {
+          scopesEl.innerHTML = '<p class="text-muted small">No specific scopes requested.</p>';
+        } else {
+          scopesEl.innerHTML = '';
+          for (var i = 0; i < requestedScopes.length; i++) {
+            var s = requestedScopes[i];
+            var label = scopeLabels[s] || s;
+            scopesEl.innerHTML +=
+              '<div class="d-flex align-items-center gap-2 mb-2">' +
+                '<input type="checkbox" class="consent-scope-chk" value="' + s + '" id="cchk_' + i + '" checked>' +
+                '<label for="cchk_' + i + '" class="mb-0 small">' +
+                  '<span class="scope-tag me-1">' + s + '</span>' + label +
+                '</label>' +
+              '</div>';
+          }
+        }
+      })
+      .catch(function(err) {
+        document.getElementById('loading').style.display = 'none';
+        showError('msg', 'Could not load consent details. Please try again.');
+      });
+  }
+
+  async function allow() {
+    var btn = document.getElementById('allowBtn');
+    btn.disabled = true;
+    btn.textContent = 'Authorising...';
+
+    // only grant scopes the user left ticked
+    var checked = document.querySelectorAll('.consent-scope-chk:checked');
+    var grantScopes = [];
+    for (var i = 0; i < checked.length; i++) {
+      grantScopes.push(checked[i].value);
+    }
+
+    try {
+      var result = await post(API + '/hydra/consent/accept', {
+        consent_challenge: challenge,
+        grant_scopes: grantScopes
+      });
+      window.location.replace(result.redirect_to);
+    } catch (err) {
+      showError('msg', err.message);
+      btn.disabled = false;
+      btn.textContent = 'Allow Access';
+    }
+  }
+
+  async function deny() {
+    try {
+      var result = await post(API + '/hydra/consent/reject', {
+        consent_challenge: challenge
+      });
+      window.location.replace(result.redirect_to);
+    } catch (err) {
+      showError('msg', err.message);
+    }
+  }
+</script>
+</body>
+</html>
