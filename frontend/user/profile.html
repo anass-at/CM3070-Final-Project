@@ -110,13 +110,37 @@
         <p class="text-muted small">Your official national identification number</p>
         <div class="mb-2">
           <label class="form-label">National ID Number</label>
-          <input type="text" id="national_id" class="form-control">
+          <input type="text" id="national_id" class="form-control" maxlength="8" inputmode="numeric" pattern="[0-9]{8}" placeholder="8-digit number">
+          <div class="form-text">Must be exactly 8 digits.</div>
         </div>
       </div>
     </div>
 
     <button type="submit" id="submitBtn" data-label="Save Profile" class="btn btn-primary mb-4">Save Profile</button>
   </form>
+
+  <!-- Change Password -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h6>Change Password</h6>
+      <div id="pwMsg" style="display:none" class="mb-2"></div>
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label">Current Password</label>
+          <input type="password" id="currentPw" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">New Password</label>
+          <input type="password" id="newPw" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" id="confirmPw" class="form-control">
+        </div>
+      </div>
+      <button class="btn btn-outline-secondary btn-sm mt-3" id="pwBtn" data-label="Change Password" onclick="changePassword()">Change Password</button>
+    </div>
+  </div>
 </div>
 
 <script src="../js/api.js"></script>
@@ -200,6 +224,13 @@
     setLoading(btn, true);
     hideAlert('msg');
 
+    var nationalId = document.getElementById('national_id').value.trim();
+    if (nationalId && !/^\d{8}$/.test(nationalId)) {
+      showError('msg', 'National ID must be exactly 8 digits.');
+      setLoading(btn, false);
+      return;
+    }
+
     var fields = ['first_name', 'middle_name', 'last_name', 'birth_date', 'location', 'phone_number', 'education', 'national_id'];
     var body = {};
     for (var i = 0; i < fields.length; i++) {
@@ -218,6 +249,30 @@
 
     setLoading(btn, false);
   });
+
+  async function changePassword() {
+    var btn = document.getElementById('pwBtn');
+    var current = document.getElementById('currentPw').value;
+    var newPw   = document.getElementById('newPw').value;
+    var confirm = document.getElementById('confirmPw').value;
+
+    if (!current || !newPw) { showError('pwMsg', 'Please fill in all password fields.'); return; }
+    if (newPw !== confirm)  { showError('pwMsg', 'New passwords do not match.'); return; }
+    if (newPw.length < 8)  { showError('pwMsg', 'New password must be at least 8 characters.'); return; }
+
+    setLoading(btn, true);
+    hideAlert('pwMsg');
+    try {
+      await put(API + '/auth/change-password', { current_password: current, new_password: newPw }, token);
+      showSuccess('pwMsg', 'Password changed successfully.');
+      document.getElementById('currentPw').value = '';
+      document.getElementById('newPw').value = '';
+      document.getElementById('confirmPw').value = '';
+    } catch (err) {
+      showError('pwMsg', err.message);
+    }
+    setLoading(btn, false);
+  }
 
   loadProfile();
 </script>

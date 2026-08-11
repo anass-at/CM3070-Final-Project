@@ -198,11 +198,18 @@
             }
           }
 
+          var newBadge = (!alreadyApproved && company.is_approved)
+            ? ' <span class="badge bg-warning text-dark" style="font-size:10px;">New</span>'
+            : '';
+          var approvedBadge = alreadyApproved
+            ? ' <span class="badge bg-success" style="font-size:10px;">Approved</span>'
+            : '';
+
           scopesEl.innerHTML +=
-            '<div class="border rounded p-3 mb-2">' +
+            '<div class="border rounded p-3 mb-2' + (!alreadyApproved && company.is_approved ? ' border-warning' : '') + '">' +
               '<div class="d-flex align-items-center gap-2 mb-2">' +
                 '<input type="checkbox" class="scope-approve-chk" value="' + scope + '" id="chk_' + scope.replace(':', '_') + '" ' + (alreadyApproved ? 'checked' : '') + '>' +
-                '<label for="chk_' + scope.replace(':', '_') + '" class="mb-0"><span class="scope-tag">' + scope + '</span></label>' +
+                '<label for="chk_' + scope.replace(':', '_') + '" class="mb-0"><span class="scope-tag">' + scope + '</span>' + approvedBadge + newBadge + '</label>' +
               '</div>' +
               '<p class="text-muted small mb-0"><strong>Justification:</strong> ' + reason + '</p>' +
             '</div>';
@@ -211,8 +218,17 @@
 
       // show current status if already approved or rejected
       if (company.is_approved) {
+        // check for pending scope update
+        var approvedSet = (company.approved_scopes || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+        var requestedSet = (company.requested_scopes || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+        var hasScopeUpdate = requestedSet.some(function(s){ return approvedSet.indexOf(s) === -1; });
+
         document.getElementById('alreadyDecided').style.display = 'block';
-        document.getElementById('alreadyDecided').innerHTML = '<div class="alert alert-success">This company is already <strong>approved</strong>. You can re-approve with different scopes if needed.</div>';
+        if (hasScopeUpdate) {
+          document.getElementById('alreadyDecided').innerHTML = '<div class="alert alert-warning"><strong>Scope Update Request</strong> — This company has requested additional scopes (highlighted in yellow). Review them and re-approve to update their access.</div>';
+        } else {
+          document.getElementById('alreadyDecided').innerHTML = '<div class="alert alert-success">This company is already <strong>approved</strong>. You can re-approve with different scopes if needed.</div>';
+        }
         document.getElementById('rejectBtn').disabled = false;
       } else if (!company.is_active) {
         document.getElementById('alreadyDecided').style.display = 'block';

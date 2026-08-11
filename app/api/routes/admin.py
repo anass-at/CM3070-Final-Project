@@ -37,11 +37,60 @@ def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
 
+@router.get("/stats")
+def get_stats(admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    all_users = db.query(User).filter(User.role != "admin").all()
+    all_companies = db.query(Company).all()
+
+    # complete profile = has first_name, last_name, national_id, document_path
+    def profile_complete(u):
+        return bool(u.first_name and u.last_name and u.national_id and u.document_path)
+
+    total_users       = len(all_users)
+    verified_users    = sum(1 for u in all_users if u.is_verified)
+    rejected_users    = sum(1 for u in all_users if not u.is_active)
+    pending_users     = sum(1 for u in all_users if profile_complete(u) and not u.is_verified and u.is_active)
+
+    total_companies    = len(all_companies)
+    approved_companies = sum(1 for c in all_companies if c.is_approved)
+    rejected_companies = sum(1 for c in all_companies if not c.is_active)
+    pending_companies  = sum(1 for c in all_companies if not c.is_approved and c.is_active)
+
+    # approved companies that have requested scopes not yet in approved_scopes
+    def has_scope_update(c):
+        if not c.is_approved:
+            return False
+        approved = set(s.strip() for s in (c.approved_scopes or "").split(",") if s.strip())
+        requested = set(s.strip() for s in (c.requested_scopes or "").split(",") if s.strip())
+        return bool(requested - approved)
+
+    scope_updates = sum(1 for c in all_companies if has_scope_update(c))
+
+    return {
+        "total_users":        total_users,
+        "verified_users":     verified_users,
+        "pending_users":      pending_users,
+        "rejected_users":     rejected_users,
+        "total_companies":    total_companies,
+        "approved_companies": approved_companies,
+        "pending_companies":  pending_companies,
+        "rejected_companies": rejected_companies,
+        "scope_updates":      scope_updates,
+    }
+
+
 # --- Users ---
 
 @router.get("/users", response_model=List[AdminUserResponse])
 def list_users(admin: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    return db.query(User).filter(User.role != "admin").all()
+    # only show users with a complete profile: first name, last name, national ID, and uploaded document
+    return db.query(User).filter(
+        User.role != "admin",
+        User.first_name.isnot(None), User.first_name != "",
+        User.last_name.isnot(None),  User.last_name != "",
+        User.national_id.isnot(None), User.national_id != "",
+        User.document_path.isnot(None), User.document_path != "",
+    ).all()
 
 
 @router.get("/users/{user_id}", response_model=AdminUserResponse)
