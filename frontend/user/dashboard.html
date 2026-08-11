@@ -39,6 +39,21 @@
 
   <div id="statusBadge" class="alert alert-warning mt-2">Loading...</div>
 
+  <div id="rejectedSection" style="display:none">
+    <div class="card mt-3">
+      <div class="card-body">
+        <h6>What can you do?</h6>
+        <p class="text-muted small">Update your profile and resubmit your application for admin review.</p>
+        <div id="resubmitMsg" style="display:none" class="mb-3"></div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="profile.html" class="btn btn-outline-primary btn-sm">Update Profile</a>
+          <a href="documents.html" class="btn btn-outline-secondary btn-sm">Update Document</a>
+          <button class="btn btn-success btn-sm" id="resubmitBtn" onclick="resubmit()">Resubmit for Verification</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="row mt-3">
     <div class="col-md-6">
       <div class="card">
@@ -97,12 +112,32 @@
         document.getElementById('statusBadge').className = 'alert alert-success mt-2';
         document.getElementById('statusBadge').innerHTML = '<strong>Status: Verified</strong> — Your identity has been confirmed by an admin.';
       } else if (!user.is_active) {
-        var reasonText = user.rejection_reason ? '<br><span class="small">Reason: ' + user.rejection_reason + '</span>' : '';
+        var reasonText = user.rejection_reason ? '<br><span class="small"><strong>Reason:</strong> ' + user.rejection_reason + '</span>' : '';
         document.getElementById('statusBadge').className = 'alert alert-danger mt-2';
-        document.getElementById('statusBadge').innerHTML = '<strong>Status: Rejected</strong> — Your identity verification was rejected by an admin.' + reasonText;
+        document.getElementById('statusBadge').innerHTML =
+          '<strong>Status: Rejected</strong> — Your identity verification was rejected by an admin.' + reasonText;
+        document.getElementById('rejectedSection').style.display = 'block';
       } else {
-        document.getElementById('statusBadge').className = 'alert alert-warning mt-2';
-        document.getElementById('statusBadge').innerHTML = '<strong>Status: Pending Verification</strong> — Submit your identity details and document so an admin can verify you.';
+        // check which required fields are missing
+        var missing = [];
+        if (!user.first_name)    missing.push({ label: 'First name',  link: 'profile.html' });
+        if (!user.last_name)     missing.push({ label: 'Last name',   link: 'profile.html' });
+        if (!user.national_id)   missing.push({ label: 'National ID', link: 'profile.html' });
+        if (!user.document_path) missing.push({ label: 'Identity document', link: 'documents.html' });
+
+        if (missing.length > 0) {
+          var missingHtml = missing.map(function(m) {
+            return '<a href="' + m.link + '" class="text-dark fw-semibold">' + m.label + '</a>';
+          }).join(', ');
+          document.getElementById('statusBadge').className = 'alert alert-warning mt-2';
+          document.getElementById('statusBadge').innerHTML =
+            '<strong>Action Required — Complete Your Profile</strong><br>' +
+            'The following required fields are missing: ' + missingHtml + '.<br>' +
+            'Your profile will not appear for admin review until all required fields are filled in.';
+        } else {
+          document.getElementById('statusBadge').className = 'alert alert-info mt-2';
+          document.getElementById('statusBadge').innerHTML = '<strong>Status: Pending Verification</strong> — Your profile is complete. An admin will review and verify your identity shortly.';
+        }
       }
 
       // profile checklist
@@ -148,6 +183,21 @@
       }
     } catch (err) {
       document.getElementById('accessLogBody').innerHTML = '<tr><td colspan="3" class="text-muted">Could not load logs</td></tr>';
+    }
+  }
+
+  async function resubmit() {
+    var btn = document.getElementById('resubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    hideAlert('resubmitMsg');
+    try {
+      await post(API + '/auth/resubmit', {}, getToken('user_token'));
+      location.reload();
+    } catch (err) {
+      showError('resubmitMsg', err.message);
+      btn.disabled = false;
+      btn.textContent = 'Resubmit for Verification';
     }
   }
 

@@ -14,9 +14,9 @@ router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:4444/oauth2/token")
 
 
-@router.get("/{user_id}")
+@router.get("/{national_id}")
 def get_identity(
-    user_id: int,
+    national_id: str,
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
@@ -44,15 +44,15 @@ def get_identity(
     if not company or not company.is_approved:
         raise HTTPException(status_code=403, detail="Company not approved")
 
-    # Resolve user and check they are verified
-    user = db.query(User).filter(User.id == user_id).first()
+    # Resolve user by national_id and check they are verified
+    user = db.query(User).filter(User.national_id == national_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="User identity not verified")
 
     # Build the response — handle computed scopes first, then regular field scopes
-    result = {"user_id": user.id}
+    result = {"national_id": user.national_id}
 
     for scope in scopes:
         if scope == "name:full_name":
@@ -77,7 +77,7 @@ def get_identity(
         company_name=company.name,
         user_id=user.id,
         scope_used=" ".join(scopes),
-        endpoint=f"/api/v1/identity/{user_id}",
+        endpoint=f"/api/v1/identity/{national_id}",
         status_code=200,
     ))
     db.commit()

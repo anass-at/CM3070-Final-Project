@@ -60,6 +60,13 @@
         let statusHtml;
         if (c.is_approved) {
           statusHtml = '<span class="status-approved">Approved</span>';
+          // check if there are newly requested scopes not yet approved
+          var approved = (c.approved_scopes || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+          var requested = (c.requested_scopes || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+          var hasNew = requested.some(function(s){ return approved.indexOf(s) === -1; });
+          if (hasNew) {
+            statusHtml += ' <span class="badge bg-warning text-dark ms-1" style="font-size:10px;">Scope Update</span>';
+          }
         } else if (!c.is_active) {
           statusHtml = '<span class="status-rejected">Rejected</span>';
         } else {

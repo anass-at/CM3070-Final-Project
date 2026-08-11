@@ -105,8 +105,15 @@
   <!-- Step 2: Scope request -->
   <div class="card mb-4">
     <div class="card-body">
-      <h5>Step 2 — Request Data Scopes</h5>
-      <p class="text-muted small">Select the user data fields your organisation needs access to, and explain why you need each one. The admin will review this before granting access.</p>
+      <h5 id="scopesSectionTitle">Step 2 — Request Data Scopes</h5>
+      <p id="scopesSectionDesc" class="text-muted small">Select the user data fields your organisation needs access to, and explain why you need each one. The admin will review this before granting access.</p>
+
+      <!-- shown only for approved companies -->
+      <div id="approvedScopesBox" style="display:none" class="alert alert-success mb-3">
+        <strong>Currently Approved Scopes:</strong>
+        <div id="approvedScopesList" class="mt-1"></div>
+        <p class="mb-0 mt-2 small">To request additional scopes, tick them below and provide a justification. Your request will go through the admin approval process again.</p>
+      </div>
 
       <form id="scopesForm">
         <div class="mb-3">
@@ -201,6 +208,29 @@
 
         <button type="submit" id="scopesBtn" data-label="Submit Scope Request" class="btn btn-success">Submit Scope Request</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Change Password -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5>Change Password</h5>
+      <div id="pwMsg" style="display:none" class="mb-2"></div>
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label class="form-label">Current Password</label>
+          <input type="password" id="currentPw" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">New Password</label>
+          <input type="password" id="newPw" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" id="confirmPw" class="form-control">
+        </div>
+      </div>
+      <button class="btn btn-outline-secondary btn-sm mt-3" id="pwBtn" data-label="Change Password" onclick="changePassword()">Change Password</button>
     </div>
   </div>
 </div>
@@ -364,6 +394,38 @@
           }
         }
       }
+
+      // for approved companies: show approved scopes box + mark them in the table
+      if (company.is_approved && company.approved_scopes) {
+        const approvedList = company.approved_scopes.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+
+        document.getElementById('scopesSectionTitle').textContent = 'Data Scopes';
+        document.getElementById('scopesSectionDesc').textContent = 'Your approved scopes are listed below. You can request additional scopes — they will be reviewed by an admin before being added.';
+        document.getElementById('approvedScopesBox').style.display = 'block';
+        document.getElementById('scopesBtn').textContent = 'Update Scope Request';
+        document.getElementById('scopesBtn').dataset.label = 'Update Scope Request';
+
+        // list approved scopes as pills
+        var pillsHtml = '';
+        for (var k = 0; k < approvedList.length; k++) {
+          pillsHtml += '<span class="scope-tag me-1">' + approvedList[k] + '</span>';
+        }
+        document.getElementById('approvedScopesList').innerHTML = pillsHtml || '<span class="text-muted">None</span>';
+
+        // mark each approved scope row in the table with a badge
+        for (var m = 0; m < approvedList.length; m++) {
+          var scopeId = approvedList[m].replace(':', '_');
+          var chk = document.getElementById('chk_' + scopeId);
+          if (chk) {
+            chk.checked = true;
+            // add "Approved" badge next to the scope tag in the same row
+            var scopeCell = chk.closest('tr').querySelector('.scope-tag');
+            if (scopeCell && !scopeCell.querySelector('.approved-badge')) {
+              scopeCell.insertAdjacentHTML('afterend', ' <span class="badge bg-success approved-badge" style="font-size:10px;vertical-align:middle;">Approved</span>');
+            }
+          }
+        }
+      }
     } catch (err) {
       showError('msg', 'Could not load profile: ' + err.message);
     }
@@ -470,6 +532,30 @@
       setLoading(btn, false);
     }
   });
+
+  async function changePassword() {
+    var btn = document.getElementById('pwBtn');
+    var current = document.getElementById('currentPw').value;
+    var newPw   = document.getElementById('newPw').value;
+    var confirm = document.getElementById('confirmPw').value;
+
+    if (!current || !newPw) { showError('pwMsg', 'Please fill in all password fields.'); return; }
+    if (newPw !== confirm)  { showError('pwMsg', 'New passwords do not match.'); return; }
+    if (newPw.length < 8)  { showError('pwMsg', 'New password must be at least 8 characters.'); return; }
+
+    setLoading(btn, true);
+    hideAlert('pwMsg');
+    try {
+      await put(API + '/company/change-password', { current_password: current, new_password: newPw }, token);
+      showSuccess('pwMsg', 'Password changed successfully.');
+      document.getElementById('currentPw').value = '';
+      document.getElementById('newPw').value = '';
+      document.getElementById('confirmPw').value = '';
+    } catch (err) {
+      showError('pwMsg', err.message);
+    }
+    setLoading(btn, false);
+  }
 
   loadProfile();
 </script>

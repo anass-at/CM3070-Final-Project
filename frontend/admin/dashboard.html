@@ -25,29 +25,60 @@
   <h4>Admin Dashboard</h4>
   <p class="text-muted">Overview of the platform</p>
 
-  <div class="row mb-4">
+  <h6 class="text-muted text-uppercase small mb-2" style="letter-spacing:.05em">Users</h6>
+  <!-- User stats -->
+  <div class="row mb-3">
     <div class="col-md-3">
       <div class="card text-center p-3">
         <h2 id="totalUsers">—</h2>
-        <p class="text-muted">Total Users</p>
+        <p class="text-muted mb-0">Total Users</p>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3">
+        <h2 id="verifiedUsers" class="text-success">—</h2>
+        <p class="text-muted mb-0">Verified</p>
       </div>
     </div>
     <div class="col-md-3">
       <div class="card text-center p-3">
         <h2 id="pendingUsers" class="text-warning">—</h2>
-        <p class="text-muted">Pending Verification</p>
+        <p class="text-muted mb-0">Pending Review</p>
       </div>
     </div>
     <div class="col-md-3">
       <div class="card text-center p-3">
-        <h2 id="approvedCompanies">—</h2>
-        <p class="text-muted">Approved Companies</p>
+        <h2 id="rejectedUsers" class="text-danger">—</h2>
+        <p class="text-muted mb-0">Rejected</p>
+      </div>
+    </div>
+  </div>
+
+  <h6 class="text-muted text-uppercase small mb-2" style="letter-spacing:.05em">Companies</h6>
+  <!-- Company stats -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-center p-3">
+        <h2 id="totalCompanies">—</h2>
+        <p class="text-muted mb-0">Total Companies</p>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3">
+        <h2 id="approvedCompanies" class="text-success">—</h2>
+        <p class="text-muted mb-0">Approved</p>
       </div>
     </div>
     <div class="col-md-3">
       <div class="card text-center p-3">
         <h2 id="pendingCompanies" class="text-warning">—</h2>
-        <p class="text-muted">Pending Approval</p>
+        <p class="text-muted mb-0">Pending Approval</p>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center p-3">
+        <h2 id="scopeUpdates" class="text-info">—</h2>
+        <p class="text-muted mb-0">Scope Updates</p>
       </div>
     </div>
   </div>
@@ -88,77 +119,65 @@
   async function loadDashboard() {
     const token = getToken('admin_token');
 
-    // load users and companies from the API
-    let users = [];
-    let companies = [];
+    try {
+      const stats = await get(API + '/admin/stats', token);
+
+      document.getElementById('totalUsers').textContent       = stats.total_users;
+      document.getElementById('verifiedUsers').textContent    = stats.verified_users;
+      document.getElementById('pendingUsers').textContent     = stats.pending_users;
+      document.getElementById('rejectedUsers').textContent    = stats.rejected_users;
+      document.getElementById('totalCompanies').textContent   = stats.total_companies;
+      document.getElementById('approvedCompanies').textContent= stats.approved_companies;
+      document.getElementById('pendingCompanies').textContent = stats.pending_companies;
+      document.getElementById('scopeUpdates').textContent     = stats.scope_updates;
+    } catch (err) {
+      console.log('Could not load stats:', err.message);
+    }
+
+    // load pending users and companies for the tables
+    try {
+      const users = await get(API + '/admin/users', token);
+      const pending = users.filter(function(u) { return !u.is_verified && u.is_active; });
+      const usersTable = document.getElementById('pendingUsersBody');
+      if (pending.length === 0) {
+        usersTable.innerHTML = '<tr><td colspan="3" class="text-muted">No pending users.</td></tr>';
+      } else {
+        usersTable.innerHTML = '';
+        var max = Math.min(pending.length, 5);
+        for (var i = 0; i < max; i++) {
+          var u = pending[i];
+          var name = (u.first_name || '') + ' ' + (u.last_name || '');
+          usersTable.innerHTML += '<tr>' +
+            '<td>' + name.trim() + '</td>' +
+            '<td class="text-muted small">' + u.email + '</td>' +
+            '<td><a href="user-review.html?id=' + u.id + '" class="btn btn-sm btn-primary">Review</a></td>' +
+            '</tr>';
+        }
+      }
+    } catch (err) {
+      document.getElementById('pendingUsersBody').innerHTML = '<tr><td colspan="3" class="text-muted">Could not load.</td></tr>';
+    }
 
     try {
-      users = await get(API + '/admin/users', token);
+      const companies = await get(API + '/admin/companies', token);
+      const pending = companies.filter(function(c) { return !c.is_approved && c.is_active; });
+      const compsTable = document.getElementById('pendingCompaniesBody');
+      if (pending.length === 0) {
+        compsTable.innerHTML = '<tr><td colspan="3" class="text-muted">No pending companies.</td></tr>';
+      } else {
+        compsTable.innerHTML = '';
+        var max2 = Math.min(pending.length, 5);
+        for (var j = 0; j < max2; j++) {
+          var c = pending[j];
+          compsTable.innerHTML += '<tr>' +
+            '<td>' + c.name + '</td>' +
+            '<td class="text-muted small">' + (c.company_type || '—') + '</td>' +
+            '<td><a href="company-review.html?id=' + c.id + '" class="btn btn-sm btn-primary">Review</a></td>' +
+            '</tr>';
+        }
+      }
     } catch (err) {
-      console.log('Could not load users:', err.message);
-    }
-
-    try {
-      companies = await get(API + '/admin/companies', token);
-    } catch (err) {
-      console.log('Could not load companies:', err.message);
-    }
-
-    // count pending ones
-    let pendingUsers = [];
-    let pendingComps = [];
-    let approvedCount = 0;
-
-    for (let i = 0; i < users.length; i++) {
-      if (!users[i].is_verified && users[i].is_active) {
-        pendingUsers.push(users[i]);
-      }
-    }
-
-    for (let i = 0; i < companies.length; i++) {
-      if (companies[i].is_approved) {
-        approvedCount++;
-      } else if (companies[i].is_active) {
-        pendingComps.push(companies[i]);
-      }
-    }
-
-    // update stat cards
-    document.getElementById('totalUsers').textContent = users.length;
-    document.getElementById('pendingUsers').textContent = pendingUsers.length;
-    document.getElementById('approvedCompanies').textContent = approvedCount;
-    document.getElementById('pendingCompanies').textContent = pendingComps.length;
-
-    // fill pending users table
-    const usersTable = document.getElementById('pendingUsersBody');
-    if (pendingUsers.length === 0) {
-      usersTable.innerHTML = '<tr><td colspan="3" class="text-muted">No pending users.</td></tr>';
-    } else {
-      usersTable.innerHTML = '';
-      for (let i = 0; i < Math.min(pendingUsers.length, 5); i++) {
-        const u = pendingUsers[i];
-        usersTable.innerHTML += '<tr>' +
-          '<td>' + u.username + '</td>' +
-          '<td class="text-muted small">' + u.email + '</td>' +
-          '<td><a href="user-review.html?id=' + u.id + '" class="btn btn-sm btn-primary">Review</a></td>' +
-          '</tr>';
-      }
-    }
-
-    // fill pending companies table
-    const compsTable = document.getElementById('pendingCompaniesBody');
-    if (pendingComps.length === 0) {
-      compsTable.innerHTML = '<tr><td colspan="3" class="text-muted">No pending companies.</td></tr>';
-    } else {
-      compsTable.innerHTML = '';
-      for (let i = 0; i < Math.min(pendingComps.length, 5); i++) {
-        const c = pendingComps[i];
-        compsTable.innerHTML += '<tr>' +
-          '<td>' + c.name + '</td>' +
-          '<td class="text-muted small">' + (c.company_type || '—') + '</td>' +
-          '<td><a href="company-review.html?id=' + c.id + '" class="btn btn-sm btn-primary">Review</a></td>' +
-          '</tr>';
-      }
+      document.getElementById('pendingCompaniesBody').innerHTML = '<tr><td colspan="3" class="text-muted">Could not load.</td></tr>';
     }
   }
 

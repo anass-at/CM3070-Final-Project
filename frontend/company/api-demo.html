@@ -96,13 +96,13 @@
 
         <div class="row g-2 mb-3">
           <div class="col-md-4">
-            <label class="form-label small fw-semibold">User ID</label>
-            <input type="number" class="form-control form-control-sm" id="userIdInput" placeholder="e.g. 1" min="1">
+            <label class="form-label small fw-semibold">National ID</label>
+            <input type="number" class="form-control form-control-sm" id="nationalIdInput" placeholder="e.g. 12345678" min="1">
           </div>
         </div>
 
         <div class="p-3 mb-3" style="background:#f8f9fa; border-radius:6px; font-size:0.8rem; font-family:monospace; border-left:3px solid #198754">
-          GET http://localhost:8000/api/v1/identity/<span id="previewUserId" class="text-success fw-bold">{user_id}</span><br>
+          GET http://localhost:8000/api/v1/identity/<span id="previewUserId" class="text-success fw-bold">{national_id}</span><br>
           Authorization: Bearer <span class="text-muted">[token from step 1]</span>
         </div>
 
@@ -263,14 +263,14 @@
 
   async function doSendRequest() {
     var btn = document.getElementById('sendRequestBtn');
-    var userId = document.getElementById('userIdInput').value.trim();
+    var nationalId = document.getElementById('nationalIdInput').value.trim();
 
     document.getElementById('apiErrorBox').style.display = 'none';
     document.getElementById('apiResultBox').style.display = 'none';
 
-    if (!userId) {
+    if (!nationalId) {
       document.getElementById('apiErrorBox').style.display = 'block';
-      document.getElementById('apiErrorBox').textContent = 'Please enter a user ID.';
+      document.getElementById('apiErrorBox').textContent = 'Please enter a National ID.';
       return;
     }
 
@@ -283,7 +283,7 @@
     setLoading(btn, true);
 
     try {
-      var response = await fetch(API + '/identity/' + userId, {
+      var response = await fetch(API + '/identity/' + nationalId, {
         headers: { 'Authorization': 'Bearer ' + hydraToken }
       });
 
@@ -310,8 +310,8 @@
     document.getElementById('previewScope').textContent = this.value || '...';
   });
 
-  document.getElementById('userIdInput') && document.getElementById('userIdInput').addEventListener('input', function() {
-    document.getElementById('previewUserId').textContent = this.value || '{user_id}';
+  document.getElementById('nationalIdInput') && document.getElementById('nationalIdInput').addEventListener('input', function() {
+    document.getElementById('previewUserId').textContent = this.value || '{national_id}';
   });
 
   loadPage();

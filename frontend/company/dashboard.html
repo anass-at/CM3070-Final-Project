@@ -84,6 +84,20 @@
       </div>
     </div>
   </div>
+
+  <div id="rejectedSection" style="display:none">
+    <div class="card">
+      <div class="card-body">
+        <h6>What can you do?</h6>
+        <p class="text-muted small">You can update your company details and scopes, then resubmit your application for admin review.</p>
+        <div id="resubmitMsg" style="display:none" class="mb-3"></div>
+        <div class="d-flex gap-2">
+          <a href="profile.html" class="btn btn-outline-primary">Update Profile &amp; Scopes</a>
+          <button class="btn btn-success" id="resubmitBtn" onclick="resubmit()">Resubmit Application</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="../js/api.js"></script>
@@ -118,9 +132,10 @@
         document.getElementById('clientId').value = company.hydra_client_id || 'N/A';
         document.getElementById('clientSecret').value = company.hydra_client_secret || 'N/A';
       } else if (!company.is_active) {
-        var reasonText = company.rejection_reason ? '<br><span class="small">Reason: ' + company.rejection_reason + '</span>' : '';
+        var reasonText = company.rejection_reason ? '<br><span class="small"><strong>Reason:</strong> ' + company.rejection_reason + '</span>' : '';
         document.getElementById('statusBadge').className = 'alert alert-danger mt-3';
         document.getElementById('statusBadge').innerHTML = '<strong>Status: Rejected</strong> — Your company registration was rejected by an admin.' + reasonText;
+        document.getElementById('rejectedSection').style.display = 'block';
       } else {
         document.getElementById('statusBadge').className = 'alert alert-warning mt-3';
         document.getElementById('statusBadge').innerHTML = '<strong>Status: Pending Approval</strong> — Your company registration is under review by an admin.';
@@ -129,6 +144,22 @@
     } catch (err) {
       document.getElementById('statusBadge').className = 'alert alert-danger mt-3';
       document.getElementById('statusBadge').textContent = 'Failed to load company data: ' + err.message;
+    }
+  }
+
+  async function resubmit() {
+    var btn = document.getElementById('resubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    hideAlert('resubmitMsg');
+    try {
+      await post(API + '/company/resubmit', {}, getToken('company_token'));
+      // reload dashboard — status will now show as pending
+      location.reload();
+    } catch (err) {
+      showError('resubmitMsg', err.message);
+      btn.disabled = false;
+      btn.textContent = 'Resubmit Application';
     }
   }
 
