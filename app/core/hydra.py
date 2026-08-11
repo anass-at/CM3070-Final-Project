@@ -16,7 +16,9 @@ def create_hydra_client(company_id: int, approved_scopes: list) -> tuple:
         json={
             "client_id": client_id,
             "client_secret": client_secret,
-            "grant_types": ["client_credentials"],
+            "grant_types": ["client_credentials", "authorization_code", "refresh_token"],
+            "redirect_uris": ["http://localhost:5500/company/oauth-callback.html"],
+            "response_types": ["code"],
             "scope": " ".join(approved_scopes),
             "token_endpoint_auth_method": "client_secret_post",
         },
@@ -32,7 +34,9 @@ def update_hydra_client(client_id: str, approved_scopes: list):
         f"{settings.HYDRA_ADMIN_URL}/admin/clients/{client_id}",
         json={
             "client_id": client_id,
-            "grant_types": ["client_credentials"],
+            "grant_types": ["client_credentials", "authorization_code", "refresh_token"],
+            "redirect_uris": ["http://localhost:5500/company/oauth-callback.html"],
+            "response_types": ["code"],
             "scope": " ".join(approved_scopes),
             "token_endpoint_auth_method": "client_secret_post",
         },
@@ -63,3 +67,90 @@ def introspect_token(token: str) -> dict:
     )
     resp.raise_for_status()
     return resp.json()
+
+
+def get_login_request(challenge: str) -> dict:
+    resp = requests.get(
+        f"{settings.HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/login",
+        params={"login_challenge": challenge},
+        timeout=5,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def accept_login_request(challenge: str, subject: str) -> str:
+    """Returns the redirect_to URL Hydra wants the browser sent to."""
+    resp = requests.put(
+        f"{settings.HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/login/accept",
+        params={"login_challenge": challenge},
+        json={"subject": subject, "remember": False},
+        timeout=5,
+    )
+    resp.raise_for_status()
+    return resp.json()["redirect_to"]
+
+
+def reject_login_request(challenge: str, reason: str = "User cancelled") -> str:
+    resp = requests.put(
+        f"{settings.HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/login/reject",
+        params={"login_challenge": challenge},
+        json={"error": "access_denied", "error_description": reason},
+        timeout=5,
+    )
+    resp.raise_for_status()
+    return resp.json()["redirect_to"]
+
+
+def get_consent_request(challenge: str) -> dict:
+    resp = requests.get(
+        f"{settings.HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/consent",
+        params={"consent_challenge": challenge},
+        timeout=5,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def accept_consent_request(challenge: str, scopes: list) -> str:
+    resp = requests.put(
+        f"{settings.HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/consent/accept",
+        params={"consent_challenge": challenge},
+        json={
+            "grant_scope": scopes,
+            "grant_access_token_audience": [],
+            "remember": False,
+            "session": {},
+        },
+        timeout=5,
+    )
+    resp.raise_for_status()
+    return resp.json()["redirect_to"]
+
+
+def exchange_authorization_code(client_id: str, client_secret: str, code: str, redirect_uri: str) -> dict:
+    """Exchange an authorization code for tokens at Hydra's public token endpoint."""
+    resp = requests.post(
+        f"{settings.HYDRA_PUBLIC_URL}/oauth2/token",
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": redirect_uri,
+            "client_id": client_id,
+            "client_secret": client_secret,
+        },
+        timeout=10,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def reject_consent_request(challenge: str) -> str:
+    resp = requests.put(
+        f"{settings.HYDRA_ADMIN_URL}/admin/oauth2/auth/requests/consent/reject",
+        params={"consent_challenge": challenge},
+        json={"error": "access_denied", "error_description": "User denied access"},
+        timeout=5,
+    )
+    resp.raise_for_status()
+    return resp.json()["redirect_to"]

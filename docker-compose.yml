@@ -43,11 +43,23 @@ services:
       SECRETS_SYSTEM: natid-hydra-secret-change-in-production!!
       URLS_SELF_ISSUER: http://localhost:4444/
       LOG_LEVEL: info
+      URLS_LOGIN: http://localhost:5500/user/hydra-login.html
+      URLS_CONSENT: http://localhost:5500/user/hydra-consent.html
+      URLS_ERROR: http://localhost:5500/user/hydra-error.html
       SERVE_PUBLIC_CORS_ENABLED: "true"
       SERVE_ADMIN_CORS_ENABLED: "true"
     command: serve all --dev
     depends_on:
       - hydra-migrate
+
+  # ── MailHog (local email catcher for development) ────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP — the app sends emails here
+      - "8025:8025"   # Web UI — open http://localhost:8025 to read emails
 
 volumes:
   mysql_data:
