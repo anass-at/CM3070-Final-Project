@@ -1,5 +1,7 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+import secrets
+from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body
 from sqlalchemy.orm import Session
 from typing import List
 from app.db.session import get_db
@@ -8,6 +10,8 @@ from app.models.access_log import AccessLog
 from app.schemas.auth import RegisterRequest, UpdateProfileRequest, LoginRequest, TokenResponse, UserResponse
 from app.schemas.admin import AccessLogResponse
 from app.core.security import hash_password, verify_password, create_access_token, decode_access_token
+from app.core.mail import send_password_reset_email
+from app.core.config import settings
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
@@ -63,7 +67,8 @@ def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    for field, value in body.model_dump(exclude_none=True).items():
+    incoming = body.model_dump(exclude_none=True)
+    for field, value in incoming.items():
         setattr(current_user, field, value)
     db.commit()
     db.refresh(current_user)
@@ -127,8 +132,6 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is disabled")
 
     token = create_access_token({"sub": str(user.id)})
     return {"access_token": token}
@@ -142,6 +145,89 @@ def me(current_user: User = Depends(get_current_user)):
 @router.post("/logout")
 def logout(current_user: User = Depends(get_current_user)):
     return {"message": "Logged out successfully"}
+
+
+@router.post("/resubmit", response_model=UserResponse)
+def resubmit(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.is_active:
+        raise HTTPException(status_code=400, detail="Account is not in a rejected state")
+    current_user.is_active = True
+    current_user.rejection_reason = None
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.post("/forgot-password")
+def forgot_password(body: dict = Body(...), db: Session = Depends(get_db)):
+    email = body.get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    user = db.query(User).filter(User.email == email).first()
+    # Always return 200 so we don't reveal whether an email is registered
+    if not user:
+        return {"message": "If that email is registered, a reset link has been sent."}
+
+    token = secrets.token_urlsafe(32)
+    user.reset_token = token
+    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    db.commit()
+
+    name = user.first_name or user.username
+    reset_link = f"{settings.FRONTEND_URL}/user/reset-password.html?token={token}"
+    try:
+        send_password_reset_email(user.email, reset_link, name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {e}")
+
+    return {"message": "If that email is registered, a reset link has been sent."}
+
+
+@router.post("/reset-password")
+def reset_password(body: dict = Body(...), db: Session = Depends(get_db)):
+    token = body.get("token", "").strip()
+    new_pw = body.get("new_password", "")
+
+    if not token:
+        raise HTTPException(status_code=400, detail="Reset token is required")
+    if len(new_pw) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    user = db.query(User).filter(User.reset_token == token).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    if user.reset_token_expires < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
+
+    user.hashed_password = hash_password(new_pw)
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+
+    return {"message": "Password reset successfully. You can now log in."}
+
+
+@router.put("/change-password")
+def change_password(
+    body: dict = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_pw = body.get("current_password", "")
+    new_pw = body.get("new_password", "")
+
+    if not verify_password(current_pw, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(new_pw) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+
+    current_user.hashed_password = hash_password(new_pw)
+    db.commit()
+    return {"message": "Password changed successfully"}
 
 
 @router.get("/access-logs", response_model=List[AccessLogResponse])

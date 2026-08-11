@@ -42,3 +42,6 @@ class Company(Base):
     is_active = Column(Boolean, default=True)
 
     created_at = Column(DateTime, server_default=func.now())
+
+    reset_token = Column(String(100), nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)

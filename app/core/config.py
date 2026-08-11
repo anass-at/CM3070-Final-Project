@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     HYDRA_ADMIN_URL: str = "http://localhost:4445"
     HYDRA_PUBLIC_URL: str = "http://localhost:4444"
 
+    MAIL_HOST: str = "localhost"
+    MAIL_PORT: int = 1025
+    MAIL_FROM: str = "NatID <noreply@natid.local>"
+    FRONTEND_URL: str = "http://localhost:5500"
+
     @property
     def DATABASE_URL(self) -> str:
         return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"

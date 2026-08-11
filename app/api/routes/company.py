@@ -1,5 +1,7 @@
 import os
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+import secrets
+from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Body
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError
@@ -9,6 +11,9 @@ from app.models.company import Company
 from app.schemas.company import CompanyRegisterRequest, UpdateCompanyProfileRequest, RequestScopesRequest, CompanyLoginRequest, CompanyResponse
 from app.core.scopes import ALL_SCOPES
 from app.core.security import hash_password, verify_password, create_access_token, decode_access_token
+from app.core.hydra import exchange_authorization_code
+from app.core.mail import send_password_reset_email
+from app.core.config import settings
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/company/login")
@@ -109,6 +114,22 @@ async def upload_logo(
     return company
 
 
+# Resubmit after rejection — resets to pending so admin can review again
+@router.post("/resubmit", response_model=CompanyResponse)
+def resubmit_company(
+    company: Company = Depends(get_current_company),
+    db: Session = Depends(get_db),
+):
+    if company.is_active:
+        raise HTTPException(status_code=400, detail="Company is not in a rejected state")
+
+    company.is_active = True
+    company.rejection_reason = None
+    db.commit()
+    db.refresh(company)
+    return company
+
+
 # Step 4: request data scopes with justification (must be logged in)
 @router.post("/request-scopes", response_model=CompanyResponse)
 def request_scopes(
@@ -138,8 +159,6 @@ def login_company(body: CompanyLoginRequest, db: Session = Depends(get_db)):
     company = db.query(Company).filter(Company.email == body.email).first()
     if not company or not verify_password(body.password, company.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    if not company.is_active:
-        raise HTTPException(status_code=403, detail="This company account has been disabled")
 
     scopes_list = [s.strip() for s in company.approved_scopes.split(",") if s.strip()]
     token = create_access_token({
@@ -158,6 +177,103 @@ def login_company(body: CompanyLoginRequest, db: Session = Depends(get_db)):
 @router.get("/profile", response_model=CompanyResponse)
 def get_company_profile(company: Company = Depends(get_current_company)):
     return company
+
+
+@router.post("/forgot-password")
+def company_forgot_password(body: dict = Body(...), db: Session = Depends(get_db)):
+    email = body.get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    company = db.query(Company).filter(Company.email == email).first()
+    if not company:
+        return {"message": "If that email is registered, a reset link has been sent."}
+
+    token = secrets.token_urlsafe(32)
+    company.reset_token = token
+    company.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    db.commit()
+
+    reset_link = f"{settings.FRONTEND_URL}/company/reset-password.html?token={token}"
+    try:
+        send_password_reset_email(company.email, reset_link, company.name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {e}")
+
+    return {"message": "If that email is registered, a reset link has been sent."}
+
+
+@router.post("/reset-password")
+def company_reset_password(body: dict = Body(...), db: Session = Depends(get_db)):
+    token = body.get("token", "").strip()
+    new_pw = body.get("new_password", "")
+
+    if not token:
+        raise HTTPException(status_code=400, detail="Reset token is required")
+    if len(new_pw) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    company = db.query(Company).filter(Company.reset_token == token).first()
+    if not company:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    if company.reset_token_expires < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
+
+    company.hashed_password = hash_password(new_pw)
+    company.reset_token = None
+    company.reset_token_expires = None
+    db.commit()
+
+    return {"message": "Password reset successfully. You can now log in."}
+
+
+@router.post("/oauth/exchange")
+def exchange_code(
+    body: dict = Body(...),
+    company: Company = Depends(get_current_company),
+    db: Session = Depends(get_db),
+):
+    """Exchange an OAuth2 authorization code for tokens using the company's Hydra client credentials."""
+    if not company.hydra_client_id or not company.hydra_client_secret:
+        raise HTTPException(status_code=400, detail="Company does not have an active OAuth2 client")
+
+    code = body.get("code", "")
+    redirect_uri = body.get("redirect_uri", "")
+    if not code:
+        raise HTTPException(status_code=400, detail="Authorization code is required")
+    if not redirect_uri:
+        raise HTTPException(status_code=400, detail="redirect_uri is required")
+
+    try:
+        token_data = exchange_authorization_code(
+            company.hydra_client_id,
+            company.hydra_client_secret,
+            code,
+            redirect_uri,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Token exchange failed: {e}")
+
+    return token_data
+
+
+@router.put("/change-password")
+def change_company_password(
+    body: dict = Body(...),
+    company: Company = Depends(get_current_company),
+    db: Session = Depends(get_db),
+):
+    current_pw = body.get("current_password", "")
+    new_pw = body.get("new_password", "")
+
+    if not verify_password(current_pw, company.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(new_pw) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+
+    company.hashed_password = hash_password(new_pw)
+    db.commit()
+    return {"message": "Password changed successfully"}
 
 
 @router.post("/logout")
