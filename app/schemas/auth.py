@@ -20,6 +20,10 @@ class RegisterRequest(BaseModel):
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
     last_name: Optional[str] = None
+    preferred_name: Optional[str] = None
+    professional_name: Optional[str] = None
+    religious_name: Optional[str] = None
+    nationality: Optional[str] = None
     birth_date: Optional[date] = None
     phone_number: Optional[str] = None
     location: Optional[str] = None
@@ -37,6 +41,10 @@ class UpdateProfileRequest(BaseModel):
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
     last_name: Optional[str] = None
+    preferred_name: Optional[str] = None
+    professional_name: Optional[str] = None
+    religious_name: Optional[str] = None
+    nationality: Optional[str] = None
     birth_date: Optional[date] = None
     phone_number: Optional[str] = None
     location: Optional[str] = None
@@ -66,6 +74,10 @@ class UserResponse(BaseModel):
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
     last_name: Optional[str] = None
+    preferred_name: Optional[str] = None
+    professional_name: Optional[str] = None
+    religious_name: Optional[str] = None
+    nationality: Optional[str] = None
     birth_date: Optional[date] = None
     phone_number: Optional[str] = None
     location: Optional[str] = None

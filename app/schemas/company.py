@@ -1,5 +1,11 @@
-from pydantic import BaseModel, EmailStr
+import json
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, List
+
+
+class ScopeJustification(BaseModel):
+    scope: str
+    justification: str
 
 
 # Step 1 - just the account credentials
@@ -18,12 +24,9 @@ class UpdateCompanyProfileRequest(BaseModel):
     description: Optional[str] = None
 
 
-# Step 4 - request scopes with justification
+# Step 4 - request scopes, each with its own justification
 class RequestScopesRequest(BaseModel):
-    # list of scope names the company wants e.g. ["name:full", "profile:basic"]
-    scopes: List[str]
-    # explain why each scope is needed (one paragraph is fine)
-    justification: str
+    scopes: List[ScopeJustification]
 
 
 class CompanyLoginRequest(BaseModel):
@@ -42,13 +45,22 @@ class CompanyResponse(BaseModel):
     description: Optional[str] = None
     logo: Optional[str] = None
     document_path: Optional[str] = None
-    requested_scopes: Optional[str] = None
-    scope_justification: Optional[str] = None
+    requested_scopes: Optional[List[ScopeJustification]] = None
     rejection_reason: Optional[str] = None
     is_approved: bool
     is_active: bool
     approved_scopes: str
     hydra_client_id: Optional[str] = None
     hydra_client_secret: Optional[str] = None
+
+    @field_validator('requested_scopes', mode='before')
+    @classmethod
+    def parse_requested_scopes(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v) if v else []
+            except (json.JSONDecodeError, ValueError):
+                return []
+        return v or []
 
     model_config = {"from_attributes": True}

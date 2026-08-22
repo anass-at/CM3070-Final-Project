@@ -126,58 +126,52 @@
             <form id="scopesForm">
               <div class="mb-3">
                 <label class="form-label fw-semibold">Available Scopes</label>
-                <div class="form-text mb-2">Tick the scopes you need and explain why for each one. The admin reads these justifications before deciding what to approve.</div>
+                <div class="form-text mb-2">Tick the scopes you need and provide a justification for each one. The admin reads these individually before deciding what to approve. Only request what you genuinely need.</div>
                 <table class="table table-bordered">
                   <thead class="table-light">
-                    <tr><th style="width:40px">Request</th><th style="width:160px">Scope</th><th style="width:180px">What it includes</th><th>Why do you need this?</th></tr>
+                    <tr><th style="width:40px">Request</th><th style="width:170px">Scope</th><th style="width:200px">What it includes</th><th>Why do you need this?</th></tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="account:email" id="chk_account_email"></td>
-                      <td><span class="scope-tag">account:email</span></td>
-                      <td class="text-muted small">Registered email address</td>
-                      <td><textarea class="form-control form-control-sm" id="just_account_email" rows="2" placeholder="e.g. Required to contact the user or send notifications"></textarea></td>
+                    <tr class="table-warning">
+                      <td colspan="4" class="fw-semibold small ps-2">Name Scopes — context-specific</td>
                     </tr>
                     <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="account:username" id="chk_account_username"></td>
-                      <td><span class="scope-tag">account:username</span></td>
-                      <td class="text-muted small">Username / display name</td>
-                      <td><textarea class="form-control form-control-sm" id="just_account_username" rows="2" placeholder="e.g. Required to identify the user in our system"></textarea></td>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:legal" id="chk_name_legal"></td>
+                      <td><span class="scope-tag">name:legal</span></td>
+                      <td class="text-muted small">Legal name — first, middle, last as on official documents</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_legal" rows="2" placeholder="e.g. Required for KYC and official contracts"></textarea></td>
                     </tr>
                     <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="name:full_name" id="chk_name_full_name"></td>
-                      <td><span class="scope-tag">name:full_name</span></td>
-                      <td class="text-muted small">Full name combined (first + middle + last)</td>
-                      <td><textarea class="form-control form-control-sm" id="just_name_full_name" rows="2" placeholder="e.g. Required to display the customer's complete legal name in contracts"></textarea></td>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:preferred" id="chk_name_preferred"></td>
+                      <td><span class="scope-tag">name:preferred</span></td>
+                      <td class="text-muted small">Preferred / informal name</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_preferred" rows="2" placeholder="e.g. Used to address users in personalised communications"></textarea></td>
                     </tr>
                     <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="name:first_name" id="chk_name_first_name"></td>
-                      <td><span class="scope-tag">name:first_name</span></td>
-                      <td class="text-muted small">First name</td>
-                      <td><textarea class="form-control form-control-sm" id="just_name_first_name" rows="2" placeholder="e.g. Required to address the customer by name in official correspondence"></textarea></td>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:professional" id="chk_name_professional"></td>
+                      <td><span class="scope-tag">name:professional</span></td>
+                      <td class="text-muted small">Professional / work name</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_professional" rows="2" placeholder="e.g. Required for employee records and professional profiles"></textarea></td>
                     </tr>
                     <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="name:middle_name" id="chk_name_middle_name"></td>
-                      <td><span class="scope-tag">name:middle_name</span></td>
-                      <td class="text-muted small">Middle name</td>
-                      <td><textarea class="form-control form-control-sm" id="just_name_middle_name" rows="2" placeholder="e.g. Needed to match the full legal name on official documents"></textarea></td>
+                      <td class="text-center"><input type="checkbox" name="scope" value="name:religious" id="chk_name_religious"></td>
+                      <td><span class="scope-tag">name:religious</span></td>
+                      <td class="text-muted small">Religious / community name</td>
+                      <td><textarea class="form-control form-control-sm" id="just_name_religious" rows="2" placeholder="e.g. Required for community and religious institution records"></textarea></td>
+                    </tr>
+                    <tr class="table-warning">
+                      <td colspan="4" class="fw-semibold small ps-2">Profile Scopes</td>
                     </tr>
                     <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="name:last_name" id="chk_name_last_name"></td>
-                      <td><span class="scope-tag">name:last_name</span></td>
-                      <td class="text-muted small">Last name / family name</td>
-                      <td><textarea class="form-control form-control-sm" id="just_name_last_name" rows="2" placeholder="e.g. Required for account registration under the customer's legal surname"></textarea></td>
-                    </tr>
-                    <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="profile:birth_date" id="chk_profile_birth_date"></td>
-                      <td><span class="scope-tag">profile:birth_date</span></td>
-                      <td class="text-muted small">Date of birth</td>
-                      <td><textarea class="form-control form-control-sm" id="just_profile_birth_date" rows="2" placeholder="e.g. Needed for age verification as required by regulations"></textarea></td>
+                      <td class="text-center"><input type="checkbox" name="scope" value="profile:basic" id="chk_profile_basic"></td>
+                      <td><span class="scope-tag">profile:basic</span></td>
+                      <td class="text-muted small">Date of birth, nationality, profile photo</td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_basic" rows="2" placeholder="e.g. Required for age verification and nationality checks under regulation"></textarea></td>
                     </tr>
                     <tr>
                       <td class="text-center"><input type="checkbox" name="scope" value="profile:location" id="chk_profile_location"></td>
                       <td><span class="scope-tag">profile:location</span></td>
-                      <td class="text-muted small">Location / city</td>
+                      <td class="text-muted small">City / country of residence</td>
                       <td><textarea class="form-control form-control-sm" id="just_profile_location" rows="2" placeholder="e.g. Used to determine applicable regional regulations"></textarea></td>
                     </tr>
                     <tr>
@@ -190,25 +184,37 @@
                       <td class="text-center"><input type="checkbox" name="scope" value="profile:education" id="chk_profile_education"></td>
                       <td><span class="scope-tag">profile:education</span></td>
                       <td class="text-muted small">Education background</td>
-                      <td><textarea class="form-control form-control-sm" id="just_profile_education" rows="2" placeholder="e.g. Required to validate academic qualifications for job applications"></textarea></td>
+                      <td><textarea class="form-control form-control-sm" id="just_profile_education" rows="2" placeholder="e.g. Required to validate academic qualifications for applications"></textarea></td>
+                    </tr>
+                    <tr class="table-warning">
+                      <td colspan="4" class="fw-semibold small ps-2">Account Scopes</td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="account:email" id="chk_account_email"></td>
+                      <td><span class="scope-tag">account:email</span></td>
+                      <td class="text-muted small">Registered email address</td>
+                      <td><textarea class="form-control form-control-sm" id="just_account_email" rows="2" placeholder="e.g. Required to contact the user or send notifications"></textarea></td>
+                    </tr>
+                    <tr>
+                      <td class="text-center"><input type="checkbox" name="scope" value="account:username" id="chk_account_username"></td>
+                      <td><span class="scope-tag">account:username</span></td>
+                      <td class="text-muted small">Username</td>
+                      <td><textarea class="form-control form-control-sm" id="just_account_username" rows="2" placeholder="e.g. Required to identify the user in our system"></textarea></td>
+                    </tr>
+                    <tr class="table-danger">
+                      <td colspan="4" class="fw-semibold small ps-2">Sensitive Identity Scopes — requires strong justification</td>
                     </tr>
                     <tr>
                       <td class="text-center"><input type="checkbox" name="scope" value="identity:national_id" id="chk_identity_national_id"></td>
                       <td><span class="scope-tag">identity:national_id</span></td>
                       <td class="text-muted small">National ID number</td>
-                      <td><textarea class="form-control form-control-sm" id="just_identity_national_id" rows="2" placeholder="e.g. Mandatory for KYC compliance under AML regulations"></textarea></td>
+                      <td><textarea class="form-control form-control-sm" id="just_identity_national_id" rows="2" placeholder="e.g. Mandatory for KYC compliance under AML regulations — cite the specific legal requirement"></textarea></td>
                     </tr>
                     <tr>
                       <td class="text-center"><input type="checkbox" name="scope" value="identity:document" id="chk_identity_document"></td>
                       <td><span class="scope-tag">identity:document</span></td>
                       <td class="text-muted small">Uploaded identity document</td>
-                      <td><textarea class="form-control form-control-sm" id="just_identity_document" rows="2" placeholder="e.g. Needed to cross-check the document against our records"></textarea></td>
-                    </tr>
-                    <tr>
-                      <td class="text-center"><input type="checkbox" name="scope" value="profile:photo" id="chk_profile_photo"></td>
-                      <td><span class="scope-tag">profile:photo</span></td>
-                      <td class="text-muted small">Profile photo (URL)</td>
-                      <td><textarea class="form-control form-control-sm" id="just_profile_photo" rows="2" placeholder="e.g. Needed to display the user's photo for identity verification"></textarea></td>
+                      <td><textarea class="form-control form-control-sm" id="just_identity_document" rows="2" placeholder="e.g. Needed to cross-check the document as required by regulation X"></textarea></td>
                     </tr>
                   </tbody>
                 </table>
@@ -310,24 +316,7 @@
     }
   });
 
-  // map each scope value to its justification textarea id
-  const scopeJustFields = {
-    'account:email':        'just_account_email',
-    'account:username':     'just_account_username',
-    'name:full_name':       'just_name_full_name',
-    'name:first_name':      'just_name_first_name',
-    'name:middle_name':     'just_name_middle_name',
-    'name:last_name':       'just_name_last_name',
-    'profile:birth_date':   'just_profile_birth_date',
-    'profile:location':     'just_profile_location',
-    'profile:phone':        'just_profile_phone',
-    'profile:education':    'just_profile_education',
-    'identity:national_id': 'just_identity_national_id',
-    'identity:document':    'just_identity_document',
-    'profile:photo':        'just_profile_photo'
-  };
-
-  // step 2 - submit scope request
+  // step 2 - submit scope request with per-scope justifications
   document.getElementById('scopesForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     const btn = document.getElementById('scopesBtn');
@@ -335,45 +324,29 @@
     hideAlert('globalMsg');
 
     const checkboxes = document.querySelectorAll('input[name="scope"]:checked');
-    const selectedScopes = [];
-    for (let i = 0; i < checkboxes.length; i++) {
-      selectedScopes.push(checkboxes[i].value);
-    }
-
-    if (selectedScopes.length === 0) {
+    if (checkboxes.length === 0) {
       showError('globalMsg', 'Please select at least one scope.');
       setLoading(btn, false);
       return;
     }
 
-    // build one combined justification string from each scope's individual field
-    let combined = '';
-    let missingJustification = false;
-
-    for (let i = 0; i < selectedScopes.length; i++) {
-      const scope = selectedScopes[i];
-      const fieldId = scopeJustFields[scope];
-      const text = document.getElementById(fieldId).value.trim();
-
+    // Build per-scope objects; each needs a non-empty justification
+    const scopes = [];
+    for (let i = 0; i < checkboxes.length; i++) {
+      const scope = checkboxes[i].value;
+      const justId = 'just_' + scope.replace(':', '_');
+      const justEl = document.getElementById(justId);
+      const text = justEl ? justEl.value.trim() : '';
       if (!text) {
-        missingJustification = true;
-        break;
+        showError('globalMsg', 'Please provide a justification for every scope you selected.');
+        setLoading(btn, false);
+        return;
       }
-
-      combined += scope + ': ' + text + '\n';
-    }
-
-    if (missingJustification) {
-      showError('globalMsg', 'Please provide a justification for every scope you selected.');
-      setLoading(btn, false);
-      return;
+      scopes.push({ scope: scope, justification: text });
     }
 
     try {
-      await post(API + '/company/request-scopes', {
-        scopes: selectedScopes,
-        justification: combined.trim()
-      }, token);
+      await post(API + '/company/request-scopes', { scopes: scopes }, token);
       goToStep(3);
     } catch (err) {
       showError('globalMsg', err.message);

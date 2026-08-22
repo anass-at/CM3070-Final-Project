@@ -23,13 +23,11 @@ class Company(Base):
     logo = Column(String(500), nullable=True)
     document_path = Column(String(500), nullable=True)
 
-    # scopes the company requested - comma separated, filled in step 4
-    requested_scopes = Column(String(500), default="")
+    # JSON array of {scope, justification} objects e.g.
+    # [{"scope": "name:legal", "justification": "KYC compliance"}]
+    requested_scopes = Column(Text, default="[]")
 
-    # why the company needs each scope (free text written by the company)
-    scope_justification = Column(Text, nullable=True)
-
-    # scopes the admin approved - comma separated e.g. "name:full,profile:basic"
+    # comma-separated list of approved scope names e.g. "name:legal,profile:basic"
     approved_scopes = Column(String(500), default="")
 
     # set when admin approves — used to get OAuth2 tokens from Hydra
