@@ -17,6 +17,10 @@ class User(Base):
     first_name = Column(String(100), nullable=True)
     middle_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
+    preferred_name = Column(String(100), nullable=True)      # scope: name:preferred
+    professional_name = Column(String(100), nullable=True)   # scope: name:professional
+    religious_name = Column(String(100), nullable=True)      # scope: name:religious
+    nationality = Column(String(100), nullable=True)         # scope: profile:basic
     birth_date = Column(Date, nullable=True)
     phone_number = Column(String(20), nullable=True)
     location = Column(String(255), nullable=True)

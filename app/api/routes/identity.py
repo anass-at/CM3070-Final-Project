@@ -51,25 +51,16 @@ def get_identity(
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="User identity not verified")
 
-    # Build the response — handle computed scopes first, then regular field scopes
-    result = {"national_id": user.national_id}
+    # Build the response — only include fields covered by the token's active scopes.
+    # national_id is never included by default; it only appears if the
+    # identity:national_id scope is explicitly approved and present in the token.
+    result = {}
 
     for scope in scopes:
-        if scope == "name:full_name":
-            parts = []
-            if user.first_name:
-                parts.append(user.first_name)
-            if user.middle_name:
-                parts.append(user.middle_name)
-            if user.last_name:
-                parts.append(user.last_name)
-            if parts:
-                result["full_name"] = " ".join(parts)
-        else:
-            for field in SCOPE_FIELDS.get(scope, []):
-                value = getattr(user, field, None)
-                if value is not None:
-                    result[field] = str(value) if isinstance(value, date) else value
+        for field in SCOPE_FIELDS.get(scope, []):
+            value = getattr(user, field, None)
+            if value is not None:
+                result[field] = str(value) if isinstance(value, date) else value
 
     # Log the access
     db.add(AccessLog(
@@ -82,4 +73,4 @@ def get_identity(
     ))
     db.commit()
 
-    return result
+    return {"scopes_used": scopes, "data": result}

@@ -1,6 +1,9 @@
-from pydantic import BaseModel
+import json
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import date, datetime
+
+from app.schemas.company import ScopeJustification
 
 
 class AdminUserResponse(BaseModel):
@@ -10,6 +13,10 @@ class AdminUserResponse(BaseModel):
     first_name: Optional[str] = None
     middle_name: Optional[str] = None
     last_name: Optional[str] = None
+    preferred_name: Optional[str] = None
+    professional_name: Optional[str] = None
+    religious_name: Optional[str] = None
+    nationality: Optional[str] = None
     birth_date: Optional[date] = None
     phone_number: Optional[str] = None
     location: Optional[str] = None
@@ -34,14 +41,23 @@ class AdminCompanyResponse(BaseModel):
     description: Optional[str] = None
     logo: Optional[str] = None
     document_path: Optional[str] = None
-    requested_scopes: Optional[str] = None
-    scope_justification: Optional[str] = None
+    requested_scopes: Optional[List[ScopeJustification]] = None
     approved_scopes: Optional[str] = None
     hydra_client_id: Optional[str] = None
     rejection_reason: Optional[str] = None
     is_approved: bool
     is_active: bool
     created_at: Optional[datetime] = None
+
+    @field_validator('requested_scopes', mode='before')
+    @classmethod
+    def parse_requested_scopes(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v) if v else []
+            except (json.JSONDecodeError, ValueError):
+                return []
+        return v or []
 
     model_config = {"from_attributes": True}
 
@@ -52,7 +68,7 @@ class ApproveCompanyResponse(AdminCompanyResponse):
 
 
 class ApproveCompanyRequest(BaseModel):
-    scopes: List[str]
+    scopes: List[str]  # just scope name strings — admin picks which to approve
 
 
 class RejectRequest(BaseModel):

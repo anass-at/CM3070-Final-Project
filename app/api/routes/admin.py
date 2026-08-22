@@ -147,13 +147,29 @@ def approve_company(
     admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
+    import json as _json
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
 
+    if not body.scopes:
+        raise HTTPException(status_code=400, detail="At least one scope must be approved")
+
     invalid = [s for s in body.scopes if s not in ALL_SCOPES]
     if invalid:
         raise HTTPException(status_code=400, detail=f"Invalid scopes: {invalid}")
+
+    # Warn if admin is approving scopes that were never requested
+    try:
+        requested = {item["scope"] for item in _json.loads(company.requested_scopes or "[]")}
+    except Exception:
+        requested = set()
+    not_requested = [s for s in body.scopes if s not in requested]
+    if not_requested and requested:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Scopes not requested by this company: {not_requested}"
+        )
 
     # Create or update Hydra OAuth2 client
     try:

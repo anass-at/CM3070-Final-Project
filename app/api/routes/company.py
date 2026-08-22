@@ -1,3 +1,4 @@
+import json
 import os
 import secrets
 from datetime import datetime, timedelta
@@ -130,25 +131,30 @@ def resubmit_company(
     return company
 
 
-# Step 4: request data scopes with justification (must be logged in)
+# Step 4: request data scopes, each with its own justification (must be logged in)
 @router.post("/request-scopes", response_model=CompanyResponse)
 def request_scopes(
     body: RequestScopesRequest,
     company: Company = Depends(get_current_company),
     db: Session = Depends(get_db),
 ):
-    # check that all requested scopes are valid
-    invalid = [s for s in body.scopes if s not in ALL_SCOPES]
+    if not body.scopes:
+        raise HTTPException(status_code=400, detail="At least one scope is required")
+
+    invalid = [s.scope for s in body.scopes if s.scope not in ALL_SCOPES]
     if invalid:
         raise HTTPException(
             status_code=400,
             detail=f"Unknown scopes: {invalid}. Valid scopes are: {ALL_SCOPES}"
         )
-    if not body.justification.strip():
-        raise HTTPException(status_code=400, detail="Justification cannot be empty")
+    for s in body.scopes:
+        if not s.justification.strip():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Justification for scope '{s.scope}' cannot be empty"
+            )
 
-    company.requested_scopes = ",".join(body.scopes)
-    company.scope_justification = body.justification
+    company.requested_scopes = json.dumps([s.model_dump() for s in body.scopes])
     db.commit()
     db.refresh(company)
     return company

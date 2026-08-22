@@ -1,33 +1,40 @@
 SCOPE_FIELDS = {
-    "account:email":        ["email"],
-    "account:username":     ["username"],
-    "name:full_name":       [],  # computed: first_name + middle_name + last_name joined
-    "name:first_name":      ["first_name"],
-    "name:middle_name":     ["middle_name"],
-    "name:last_name":       ["last_name"],
-    "profile:birth_date":   ["birth_date"],
+    # Context-specific name scopes — each maps to a distinct set of name fields
+    "name:legal":           ["first_name", "middle_name", "last_name"],
+    "name:preferred":       ["preferred_name"],
+    "name:professional":    ["professional_name"],
+    "name:religious":       ["religious_name"],
+
+    # Basic profile data — grouped so one approval grants age + nationality + photo
+    "profile:basic":        ["birth_date", "nationality", "profile_image"],
+
+    # Individual profile fields (for organisations that need only one)
     "profile:location":     ["location"],
     "profile:phone":        ["phone_number"],
     "profile:education":    ["education"],
-    "profile:photo":        ["profile_image"],
+
+    # Account identifiers
+    "account:email":        ["email"],
+    "account:username":     ["username"],
+
+    # Sensitive identity fields — require explicit justification
     "identity:national_id": ["national_id"],
     "identity:document":    ["document_path"],
 }
 
 SCOPE_DESCRIPTIONS = {
-    "account:email":        "User's registered email address",
-    "account:username":     "User's username",
-    "name:full_name":       "User's full name (first + middle + last) as a single combined string",
-    "name:first_name":      "User's first name",
-    "name:middle_name":     "User's middle name",
-    "name:last_name":       "User's last name",
-    "profile:birth_date":   "User's date of birth",
-    "profile:location":     "User's location / city",
-    "profile:phone":        "User's phone number",
-    "profile:education":    "User's education background",
-    "profile:photo":        "User's profile photo (URL path)",
-    "identity:national_id": "User's national ID number",
-    "identity:document":    "User's uploaded identity document",
+    "name:legal":           "Legal name (first, middle, last) as shown on official documents",
+    "name:preferred":       "Preferred name — how the person wishes to be addressed informally",
+    "name:professional":    "Professional name — used in work and business contexts",
+    "name:religious":       "Religious name — used in religious or community contexts",
+    "profile:basic":        "Basic profile: date of birth, nationality, and profile photo",
+    "profile:location":     "City or country of residence",
+    "profile:phone":        "Registered phone number",
+    "profile:education":    "Education background",
+    "account:email":        "Registered email address",
+    "account:username":     "Username",
+    "identity:national_id": "National ID number (sensitive — requires strong justification)",
+    "identity:document":    "Uploaded identity document (sensitive — requires strong justification)",
 }
 
 ALL_SCOPES = list(SCOPE_FIELDS.keys())

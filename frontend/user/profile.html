@@ -23,17 +23,17 @@
 
 <div class="container mt-4">
   <h4>My Identity Profile</h4>
-  <p class="text-muted">Fill in your identity details. Each field is linked to a specific scope that companies can request access to.</p>
+  <p class="text-muted">Each section maps to a specific scope. Companies can only see a section if the admin has approved that scope for them.</p>
 
   <div id="msg" style="display:none"></div>
 
-  <!-- Profile photo card -->
+  <!-- Profile photo -->
   <div class="card mb-3">
     <div class="card-body">
-      <h6>Profile Photo</h6>
+      <h6>Profile Photo <span class="scope-tag">profile:basic</span></h6>
       <div class="d-flex align-items-center gap-3">
-        <div id="photoPrev" style="width:80px; height:80px; border-radius:50%; background:#e9ecef; display:flex; align-items:center; justify-content:center; font-size:32px; border:2px solid #dee2e6; flex-shrink:0;">&#128100;</div>
-        <img id="photoImg" src="" alt="Profile photo" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid #dee2e6; display:none;">
+        <div id="photoPrev" style="width:80px;height:80px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;font-size:32px;border:2px solid #dee2e6;flex-shrink:0;">&#128100;</div>
+        <img id="photoImg" src="" alt="Profile photo" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;display:none;">
         <div>
           <input type="file" id="photoFile" class="form-control form-control-sm mb-2" accept="image/jpeg,image/png,image/webp" style="max-width:260px;">
           <button class="btn btn-sm btn-primary" id="photoBtn" data-label="Upload Photo" onclick="uploadPhoto()">Upload Photo</button>
@@ -44,59 +44,111 @@
 
   <form id="profileForm">
 
-    <div class="card">
+    <!-- Legal name -->
+    <div class="card mb-3">
       <div class="card-body">
-        <h6>Name</h6>
-        <p class="text-muted small">Used by banks, government, HR</p>
+        <h6>Legal Name <span class="scope-tag">name:legal</span></h6>
+        <p class="text-muted small">Your official name as shown on government-issued documents. Used by banks, government agencies, and legal services.</p>
         <div class="row">
           <div class="col-md-4 mb-2">
-            <label class="form-label">First Name <span class="scope-tag">name:first_name</span></label>
+            <label class="form-label">First Name</label>
             <input type="text" id="first_name" class="form-control">
           </div>
           <div class="col-md-4 mb-2">
-            <label class="form-label">Middle Name <span class="scope-tag">name:middle_name</span></label>
+            <label class="form-label">Middle Name</label>
             <input type="text" id="middle_name" class="form-control">
           </div>
           <div class="col-md-4 mb-2">
-            <label class="form-label">Last Name <span class="scope-tag">name:last_name</span></label>
+            <label class="form-label">Last Name</label>
             <input type="text" id="last_name" class="form-control">
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card">
+    <!-- Preferred name -->
+    <div class="card mb-3">
       <div class="card-body">
-        <h6>Basic Profile</h6>
-        <p class="text-muted small">General personal information</p>
+        <h6>Preferred Name <span class="scope-tag">name:preferred</span></h6>
+        <p class="text-muted small">What you like to be called informally — by friends, online communities, or customer-facing services.</p>
+        <div class="col-md-6 mb-2">
+          <label class="form-label">Preferred Name</label>
+          <input type="text" id="preferred_name" class="form-control" placeholder="e.g. Ali, Sam, Anas">
+        </div>
+      </div>
+    </div>
+
+    <!-- Professional name -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6>Professional Name <span class="scope-tag">name:professional</span></h6>
+        <p class="text-muted small">Your name in a work or business context — used by employers, LinkedIn, and professional platforms.</p>
+        <div class="col-md-6 mb-2">
+          <label class="form-label">Professional Name</label>
+          <input type="text" id="professional_name" class="form-control" placeholder="e.g. Dr. Ahmed Al-Rashidi">
+        </div>
+      </div>
+    </div>
+
+    <!-- Religious name -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6>Religious Name <span class="scope-tag">name:religious</span></h6>
+        <p class="text-muted small">Your name used in religious or community contexts — e.g. Abu Khalid, Umm Fatima.</p>
+        <div class="col-md-6 mb-2">
+          <label class="form-label">Religious Name</label>
+          <input type="text" id="religious_name" class="form-control" placeholder="e.g. Abu Khalid">
+        </div>
+      </div>
+    </div>
+
+    <!-- Basic profile -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6>Basic Profile <span class="scope-tag">profile:basic</span></h6>
+        <p class="text-muted small">Core demographic information used for age verification and nationality checks.</p>
         <div class="row">
           <div class="col-md-6 mb-2">
-            <label class="form-label">Date of Birth <span class="scope-tag">profile:birth_date</span></label>
+            <label class="form-label">Date of Birth</label>
             <input type="date" id="birth_date" class="form-control">
           </div>
           <div class="col-md-6 mb-2">
-            <label class="form-label">Location / City <span class="scope-tag">profile:location</span></label>
-            <input type="text" id="location" class="form-control">
+            <label class="form-label">Nationality</label>
+            <input type="text" id="nationality" class="form-control" placeholder="e.g. Saudi, British">
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card">
+    <!-- Location -->
+    <div class="card mb-3">
       <div class="card-body">
-        <h6>Contact</h6>
-        <p class="text-muted small">Used for communication and verification</p>
-        <div class="mb-2">
-          <label class="form-label">Phone Number <span class="scope-tag">profile:phone</span></label>
-          <input type="text" id="phone_number" class="form-control">
+        <h6>Location <span class="scope-tag">profile:location</span></h6>
+        <p class="text-muted small">Used to determine applicable regional regulations.</p>
+        <div class="col-md-6 mb-2">
+          <label class="form-label">City / Country</label>
+          <input type="text" id="location" class="form-control" placeholder="e.g. Riyadh, Saudi Arabia">
         </div>
       </div>
     </div>
 
-    <div class="card">
+    <!-- Phone -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6>Phone Number <span class="scope-tag">profile:phone</span></h6>
+        <p class="text-muted small">Used for OTP verification and direct contact.</p>
+        <div class="col-md-6 mb-2">
+          <label class="form-label">Phone Number</label>
+          <input type="text" id="phone_number" class="form-control" placeholder="+966 5x xxx xxxx">
+        </div>
+      </div>
+    </div>
+
+    <!-- Education -->
+    <div class="card mb-3">
       <div class="card-body">
         <h6>Education <span class="scope-tag">profile:education</span></h6>
-        <p class="text-muted small">Used by employers and academic institutions</p>
+        <p class="text-muted small">Used by employers and academic institutions.</p>
         <div class="mb-2">
           <label class="form-label">Highest Education Level</label>
           <input type="text" id="education" class="form-control" placeholder="e.g. BSc Computer Science, University of London">
@@ -104,11 +156,12 @@
       </div>
     </div>
 
-    <div class="card">
+    <!-- National ID -->
+    <div class="card mb-3">
       <div class="card-body">
         <h6>National ID <span class="scope-tag">identity:national_id</span></h6>
-        <p class="text-muted small">Your official national identification number</p>
-        <div class="mb-2">
+        <p class="text-muted small">Used for identity verification only — never shared via the API unless the identity:national_id scope is explicitly approved.</p>
+        <div class="col-md-6 mb-2">
           <label class="form-label">National ID Number</label>
           <input type="text" id="national_id" class="form-control" maxlength="8" inputmode="numeric" pattern="[0-9]{8}" placeholder="8-digit number">
           <div class="form-text">Must be exactly 8 digits.</div>
@@ -149,19 +202,18 @@
 
   const token = getToken('user_token');
 
+  var FIELDS = ['first_name', 'middle_name', 'last_name',
+                'preferred_name', 'professional_name', 'religious_name',
+                'nationality', 'birth_date', 'location',
+                'phone_number', 'education', 'national_id'];
+
   async function loadProfile() {
     try {
       var user = await get(API + '/auth/me', token);
-      document.getElementById('first_name').value   = user.first_name   || '';
-      document.getElementById('middle_name').value  = user.middle_name  || '';
-      document.getElementById('last_name').value    = user.last_name    || '';
-      document.getElementById('birth_date').value   = user.birth_date   || '';
-      document.getElementById('location').value     = user.location     || '';
-      document.getElementById('phone_number').value = user.phone_number || '';
-      document.getElementById('education').value    = user.education    || '';
-      document.getElementById('national_id').value  = user.national_id  || '';
-
-      // show existing profile photo
+      for (var i = 0; i < FIELDS.length; i++) {
+        var el = document.getElementById(FIELDS[i]);
+        if (el) el.value = user[FIELDS[i]] || '';
+      }
       if (user.profile_image) {
         document.getElementById('photoImg').src = 'http://localhost:8000' + user.profile_image;
         document.getElementById('photoImg').style.display = 'block';
@@ -172,7 +224,6 @@
     }
   }
 
-  // show preview when file selected
   document.getElementById('photoFile').addEventListener('change', function () {
     var file = this.files[0];
     if (!file) return;
@@ -188,17 +239,11 @@
   async function uploadPhoto() {
     var btn = document.getElementById('photoBtn');
     var file = document.getElementById('photoFile').files[0];
-    if (!file) {
-      showError('msg', 'Please choose a photo first.');
-      return;
-    }
-
+    if (!file) { showError('msg', 'Please choose a photo first.'); return; }
     setLoading(btn, true);
     hideAlert('msg');
-
     var formData = new FormData();
     formData.append('file', file);
-
     try {
       var response = await fetch(API + '/auth/upload-profile-image', {
         method: 'POST',
@@ -206,15 +251,11 @@
         body: formData
       });
       var data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || 'Upload failed');
-      }
+      if (!response.ok) throw new Error(data.detail || 'Upload failed');
       showSuccess('msg', 'Profile photo updated.');
     } catch (err) {
-      console.log('Photo upload failed:', err.message);
       showError('msg', err.message);
     }
-
     setLoading(btn, false);
   }
 
@@ -231,13 +272,10 @@
       return;
     }
 
-    var fields = ['first_name', 'middle_name', 'last_name', 'birth_date', 'location', 'phone_number', 'education', 'national_id'];
     var body = {};
-    for (var i = 0; i < fields.length; i++) {
-      var val = document.getElementById(fields[i]).value.trim();
-      if (val) {
-        body[fields[i]] = val;
-      }
+    for (var i = 0; i < FIELDS.length; i++) {
+      var val = document.getElementById(FIELDS[i]).value.trim();
+      if (val) body[FIELDS[i]] = val;
     }
 
     try {
@@ -246,7 +284,6 @@
     } catch (err) {
       showError('msg', err.message);
     }
-
     setLoading(btn, false);
   });
 
@@ -255,11 +292,9 @@
     var current = document.getElementById('currentPw').value;
     var newPw   = document.getElementById('newPw').value;
     var confirm = document.getElementById('confirmPw').value;
-
     if (!current || !newPw) { showError('pwMsg', 'Please fill in all password fields.'); return; }
     if (newPw !== confirm)  { showError('pwMsg', 'New passwords do not match.'); return; }
     if (newPw.length < 8)  { showError('pwMsg', 'New password must be at least 8 characters.'); return; }
-
     setLoading(btn, true);
     hideAlert('pwMsg');
     try {
