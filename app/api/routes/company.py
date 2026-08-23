@@ -1,7 +1,7 @@
 import json
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Body
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -197,7 +197,7 @@ def company_forgot_password(body: dict = Body(...), db: Session = Depends(get_db
 
     token = secrets.token_urlsafe(32)
     company.reset_token = token
-    company.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    company.reset_token_expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1)
     db.commit()
 
     reset_link = f"{settings.FRONTEND_URL}/company/reset-password.html?token={token}"
@@ -222,7 +222,7 @@ def company_reset_password(body: dict = Body(...), db: Session = Depends(get_db)
     company = db.query(Company).filter(Company.reset_token == token).first()
     if not company:
         raise HTTPException(status_code=400, detail="Invalid or expired reset link")
-    if company.reset_token_expires < datetime.utcnow():
+    if company.reset_token_expires < datetime.now(timezone.utc).replace(tzinfo=None):
         raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
 
     company.hashed_password = hash_password(new_pw)

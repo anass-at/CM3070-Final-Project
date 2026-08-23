@@ -20,57 +20,76 @@ def get_identity(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
-    # Validate token with Hydra
+    # Track values for the access log — defaults represent an anonymous failed attempt
+    log_company_id   = 0
+    log_company_name = "unknown"
+    log_user_id      = 0
+    log_scopes       = ""
+    log_status       = 500
+
     try:
-        token_data = introspect_token(token)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Token validation failed: {e}")
+        # Validate token with Hydra
+        try:
+            token_data = introspect_token(token)
+        except Exception as e:
+            log_status = 401
+            raise HTTPException(status_code=401, detail=f"Token validation failed: {e}")
 
-    if not token_data.get("active"):
-        raise HTTPException(status_code=401, detail="Token is inactive or expired")
+        if not token_data.get("active"):
+            log_status = 401
+            raise HTTPException(status_code=401, detail="Token is inactive or expired")
 
-    # Extract client identity and scopes from Hydra response
-    client_id = token_data.get("client_id", "")
-    scope_string = token_data.get("scope", "")
-    scopes = [s for s in scope_string.split(" ") if s]
+        client_id   = token_data.get("client_id", "")
+        scope_string = token_data.get("scope", "")
+        scopes      = [s for s in scope_string.split(" ") if s]
+        log_scopes  = " ".join(scopes)
 
-    # Resolve company from Hydra client_id
-    try:
-        company_id = int(client_id.replace("company_", ""))
-    except ValueError:
-        raise HTTPException(status_code=401, detail="Invalid client identity")
+        try:
+            company_id = int(client_id.replace("company_", ""))
+        except ValueError:
+            log_status = 401
+            raise HTTPException(status_code=401, detail="Invalid client identity")
 
-    company = db.query(Company).filter(Company.id == company_id).first()
-    if not company or not company.is_approved:
-        raise HTTPException(status_code=403, detail="Company not approved")
+        company = db.query(Company).filter(Company.id == company_id).first()
+        if not company or not company.is_approved:
+            log_status = 403
+            raise HTTPException(status_code=403, detail="Company not approved")
 
-    # Resolve user by national_id and check they are verified
-    user = db.query(User).filter(User.national_id == national_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    if not user.is_verified:
-        raise HTTPException(status_code=403, detail="User identity not verified")
+        log_company_id   = company.id
+        log_company_name = company.name
 
-    # Build the response — only include fields covered by the token's active scopes.
-    # national_id is never included by default; it only appears if the
-    # identity:national_id scope is explicitly approved and present in the token.
-    result = {}
+        user = db.query(User).filter(User.national_id == national_id).first()
+        if not user:
+            log_status = 404
+            raise HTTPException(status_code=404, detail="User not found")
+        if not user.is_verified:
+            log_status = 403
+            raise HTTPException(status_code=403, detail="User identity not verified")
 
-    for scope in scopes:
-        for field in SCOPE_FIELDS.get(scope, []):
-            value = getattr(user, field, None)
-            if value is not None:
-                result[field] = str(value) if isinstance(value, date) else value
+        log_user_id = user.id
 
-    # Log the access
-    db.add(AccessLog(
-        company_id=company.id,
-        company_name=company.name,
-        user_id=user.id,
-        scope_used=" ".join(scopes),
-        endpoint=f"/api/v1/identity/{national_id}",
-        status_code=200,
-    ))
-    db.commit()
+        # Build the response — only fields within the token's approved scopes.
+        # national_id is only returned if identity:national_id is explicitly granted.
+        result = {}
+        for scope in scopes:
+            for field in SCOPE_FIELDS.get(scope, []):
+                value = getattr(user, field, None)
+                if value is not None:
+                    result[field] = str(value) if isinstance(value, date) else value
 
-    return {"scopes_used": scopes, "data": result}
+        log_status = 200
+        return {"scopes_used": scopes, "data": result}
+
+    finally:
+        try:
+            db.add(AccessLog(
+                company_id=log_company_id,
+                company_name=log_company_name,
+                user_id=log_user_id,
+                scope_used=log_scopes,
+                endpoint=f"/api/v1/identity/{national_id}",
+                status_code=log_status,
+            ))
+            db.commit()
+        except Exception:
+            db.rollback()

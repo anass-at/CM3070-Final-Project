@@ -1,6 +1,6 @@
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body
 from sqlalchemy.orm import Session
 from typing import List
@@ -178,7 +178,7 @@ def forgot_password(body: dict = Body(...), db: Session = Depends(get_db)):
 
     token = secrets.token_urlsafe(32)
     user.reset_token = token
-    user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
+    user.reset_token_expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1)
     db.commit()
 
     name = user.first_name or user.username
@@ -204,7 +204,7 @@ def reset_password(body: dict = Body(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.reset_token == token).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired reset link")
-    if user.reset_token_expires < datetime.utcnow():
+    if user.reset_token_expires < datetime.now(timezone.utc).replace(tzinfo=None):
         raise HTTPException(status_code=400, detail="Reset link has expired. Please request a new one.")
 
     user.hashed_password = hash_password(new_pw)
