@@ -1,3 +1,4 @@
+import json as _json
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -27,13 +28,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     try:
         payload = decode_access_token(token)
+        if payload.get("type") == "company":
+            raise HTTPException(status_code=403, detail="Admin access required")
         user = db.query(User).filter(User.id == int(payload["sub"])).first()
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         if user.role != "admin":
             raise HTTPException(status_code=403, detail="Admin access required")
         return user
-    except JWTError as e:
+    except (JWTError, ValueError) as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
 
@@ -60,8 +63,12 @@ def get_stats(admin: User = Depends(get_current_admin), db: Session = Depends(ge
     def has_scope_update(c):
         if not c.is_approved:
             return False
+        try:
+            req_items = _json.loads(c.requested_scopes or "[]")
+            requested = {item["scope"] for item in req_items if isinstance(item, dict)}
+        except Exception:
+            requested = set()
         approved = set(s.strip() for s in (c.approved_scopes or "").split(",") if s.strip())
-        requested = set(s.strip() for s in (c.requested_scopes or "").split(",") if s.strip())
         return bool(requested - approved)
 
     scope_updates = sum(1 for c in all_companies if has_scope_update(c))
@@ -147,7 +154,6 @@ def approve_company(
     admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db),
 ):
-    import json as _json
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
