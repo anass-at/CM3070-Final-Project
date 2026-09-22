@@ -1,5 +1,14 @@
 const API = 'http://localhost:8000/api/v1';
 
+// highlight the nav link matching the current page
+(function () {
+  var page = location.pathname.split('/').pop().replace(/\.[^.]+$/, '');
+  document.querySelectorAll('.nav-link').forEach(function (a) {
+    var href = (a.getAttribute('href') || '').split(/[?#]/)[0].replace(/\.[^.]+$/, '');
+    if (href && href === page) a.classList.add('active');
+  });
+})();
+
 // save/get/remove tokens from localStorage
 function saveToken(key, value) {
   localStorage.setItem(key, value);
@@ -32,11 +41,12 @@ function requireAdminAuth() {
   }
 }
 
-// decode JWT expiry without a library (payload is plain base64)
+// decode JWT expiry — JWTs use base64url (- and _ instead of + and /), atob needs standard base64
 function isTokenExpired(token) {
   if (!token) return true;
   try {
-    var payload = JSON.parse(atob(token.split('.')[1]));
+    var b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    var payload = JSON.parse(atob(b64));
     return payload.exp * 1000 < Date.now();
   } catch (e) {
     return true;

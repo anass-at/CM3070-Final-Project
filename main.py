@@ -22,7 +22,7 @@ app = FastAPI(title="Identity & Profile Management API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5500"],
+    allow_origins=["http://localhost:5173", "http://localhost:5500", "null"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -8,15 +8,15 @@
 </head>
 <body>
 
-<nav class="navbar">
+<nav class="navbar portal-admin">
   <div class="container">
-    <span class="navbar-brand fw-bold">NatID - Admin Portal</span>
-    <div>
-      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
-      <a href="users.html" class="nav-link d-inline">Users</a>
-      <a href="companies.html" class="nav-link d-inline">Companies</a>
-      <a href="access-logs.html" class="nav-link d-inline">Access Logs</a>
-      <a href="#" onclick="logoutAdmin()" class="nav-link d-inline">Logout</a>
+    <span class="navbar-brand fw-bold">NatID <span class="portal-badge bg-danger">Admin</span></span>
+    <div class="nav-links">
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="users.html" class="nav-link">Users</a>
+      <a href="companies.html" class="nav-link">Companies</a>
+      <a href="access-logs.html" class="nav-link">Access Logs</a>
+      <a href="#" onclick="logoutAdmin()" class="nav-link nav-logout">Logout</a>
     </div>
   </div>
 </nav>
@@ -99,11 +99,11 @@
   const token = getToken('admin_token');
 
   // get company id from URL e.g. company-review.html?id=3
-  const params = new URLSearchParams(location.search);
-  const companyId = params.get('id');
+  const companyId = location.hash.replace('#', '') || null;
 
-  if (!companyId) {
-    location.href = 'companies.html';
+  if (!companyId || companyId === 'null') {
+    location.replace('companies.html');
+    throw new Error('No company id');
   }
 
   async function loadCompany() {
@@ -156,35 +156,18 @@
         docEl.innerHTML = '<div class="d-flex align-items-center gap-2"><span class="text-success">&#10003;</span><strong>' + filename + '</strong></div>' + preview;
       }
 
-      // parse scope justifications - stored as "scope: reason\nscope: reason"
+      // requested_scopes is an array of {scope, justification} objects
       const scopesEl = document.getElementById('scopesList');
+      const requestedScopes = company.requested_scopes || [];
 
-      if (!company.requested_scopes || company.requested_scopes.trim() === '') {
+      if (requestedScopes.length === 0) {
         scopesEl.innerHTML = '<p class="text-muted">No scopes requested yet.</p>';
       } else {
-        const requestedScopes = company.requested_scopes.split(',');
-        const justifications = {};
-
-        // parse the justification text back into a map
-        if (company.scope_justification) {
-          const lines = company.scope_justification.split('\n');
-          for (let i = 0; i < lines.length; i++) {
-            const colonIndex = lines[i].indexOf(': ');
-            if (colonIndex !== -1) {
-              const scope = lines[i].substring(0, colonIndex).trim();
-              const reason = lines[i].substring(colonIndex + 2).trim();
-              justifications[scope] = reason;
-            }
-          }
-        }
-
         scopesEl.innerHTML = '';
 
         for (let i = 0; i < requestedScopes.length; i++) {
-          const scope = requestedScopes[i].trim();
-          if (!scope) continue;
-
-          const reason = justifications[scope] || 'No justification provided.';
+          const scope = requestedScopes[i].scope;
+          const reason = requestedScopes[i].justification || 'No justification provided.';
 
           // check if this scope was already approved
           let alreadyApproved = false;
@@ -220,7 +203,7 @@
       if (company.is_approved) {
         // check for pending scope update
         var approvedSet = (company.approved_scopes || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
-        var requestedSet = (company.requested_scopes || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+        var requestedSet = (company.requested_scopes || []).map(function(item){ return item.scope; });
         var hasScopeUpdate = requestedSet.some(function(s){ return approvedSet.indexOf(s) === -1; });
 
         document.getElementById('alreadyDecided').style.display = 'block';
