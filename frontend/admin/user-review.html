@@ -8,15 +8,15 @@
 </head>
 <body>
 
-<nav class="navbar">
+<nav class="navbar portal-admin">
   <div class="container">
-    <span class="navbar-brand fw-bold">NatID - Admin Portal</span>
-    <div>
-      <a href="dashboard.html" class="nav-link d-inline">Dashboard</a>
-      <a href="users.html" class="nav-link d-inline">Users</a>
-      <a href="companies.html" class="nav-link d-inline">Companies</a>
-      <a href="access-logs.html" class="nav-link d-inline">Access Logs</a>
-      <a href="#" onclick="logoutAdmin()" class="nav-link d-inline">Logout</a>
+    <span class="navbar-brand fw-bold">NatID <span class="portal-badge bg-danger">Admin</span></span>
+    <div class="nav-links">
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="users.html" class="nav-link">Users</a>
+      <a href="companies.html" class="nav-link">Companies</a>
+      <a href="access-logs.html" class="nav-link">Access Logs</a>
+      <a href="#" onclick="logoutAdmin()" class="nav-link nav-logout">Logout</a>
     </div>
   </div>
 </nav>
@@ -88,12 +88,12 @@
 
   const token = getToken('admin_token');
 
-  // get the user id from the URL e.g. user-review.html?id=5
-  const params = new URLSearchParams(location.search);
-  const userId = params.get('id');
+  // get the user id from the URL hash e.g. user-review.html#5
+  const userId = location.hash.replace('#', '') || null;
 
-  if (!userId) {
-    location.href = 'users.html';
+  if (!userId || userId === 'null') {
+    location.replace('users.html');
+    throw new Error('No user id');
   }
 
   async function loadUser() {
